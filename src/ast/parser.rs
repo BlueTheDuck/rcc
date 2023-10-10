@@ -1,7 +1,7 @@
 use nom::{
     branch::alt,
     bytes::complete::take,
-    combinator::{eof, map, map_opt, verify},
+    combinator::{map, map_opt, verify},
     multi::many0,
     sequence::{terminated, tuple},
     IResult,
@@ -26,11 +26,14 @@ fn open_brace_tag<'i>(input: TokenStream<'i>) -> IResult<TokenStream<'i>, TokenS
 fn close_brace_tag<'i>(input: TokenStream<'i>) -> IResult<TokenStream<'i>, TokenStream<'i>> {
     verify(take(1usize), |t: &TokenStream| t[0] == Token::CloseBrace)(input)
 }
+fn eof_tag<'i>(input: TokenStream<'i>) -> IResult<TokenStream<'i>, TokenStream<'i>> {
+    verify(take(1usize), |t: &TokenStream| t[0] == Token::Eof)(input)
+}
 
-fn parse_ident<'i>(input: TokenStream<'i>) -> IResult<TokenStream<'i>, Ident> {
-    map_opt(verify(take(1usize), |_| true), |t: TokenStream| {
-        t[0].as_ident().copied()
-    })(input)
+fn parse_ident<'i>(i: TokenStream<'i>) -> IResult<TokenStream<'i>, Ident> {
+    map_opt(take(1usize), |t: TokenStream| {
+        t.tokens[0].as_ident().copied()
+    })(i)
 }
 
 fn parse_fn<'i>(input: TokenStream<'i>) -> IResult<TokenStream, FuncDecl> {
@@ -44,19 +47,32 @@ fn parse_fn<'i>(input: TokenStream<'i>) -> IResult<TokenStream, FuncDecl> {
             close_brace_tag,
         )),
         |(ty, name, _, _, _, _)| FuncDecl {
-            name,
             ret: ty,
+            name,
             body: None,
         },
     )(input)
 }
 
 fn parse_statement<'i>(input: TokenStream<'i>) -> IResult<TokenStream<'i>, Statement<'i>> {
-    alt((map(parse_fn, Statement::FuncDecl),))(input)
+    alt((map(parse_fn, Statement::FuncDecl), |i: TokenStream| {
+        panic!("Unimplemented: {:?}", i.tokens)
+    }))(input)
 }
 
 pub fn parse_stream<'i>(tokens: TokenStream<'i>) -> Vec<Statement<'i>> {
-    let (_, program) = terminated(many0(parse_statement), eof)(tokens).unwrap();
-
-    program
+    match terminated(many0(parse_statement), eof_tag)(tokens) {
+        Ok((rest, program)) => {
+            if !rest.tokens.is_empty() {
+                println!("Warning: {} tokens left over", rest.tokens.len());
+                for t in rest.tokens {
+                    println!("  {:?}", t);
+                }
+            }
+            return program;
+        }
+        Err(e) => {
+            panic!("Error: {:?}", e);
+        }
+    }
 }

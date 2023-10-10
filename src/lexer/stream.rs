@@ -1,22 +1,17 @@
 use std::ops::{Index, Range, RangeFrom, RangeFull, RangeTo};
 
-use nom::{InputIter, InputLength, InputTake, Slice};
+use nom::{InputIter, InputLength, InputTake, Needed, Slice};
 
-use super::{
-    token::{Token},
-};
+use super::token::Token;
 
 #[derive(Clone, Copy, Debug)]
 pub struct TokenStream<'i> {
-    tokens: &'i [Token<'i>],
-    /* pos: usize, */
+    pub(crate) tokens: &'i [Token<'i>],
 }
 
 impl<'i> TokenStream<'i> {
-    pub fn new(tokens: &'i [Token<'i>]) -> Self {
-        Self {
-            tokens, /* , pos: 0 */
-        }
+    pub const fn new(tokens: &'i [Token<'i>]) -> Self {
+        Self { tokens }
     }
 }
 
@@ -40,8 +35,8 @@ impl<'i> InputTake for TokenStream<'i> {
     }
 
     fn take_split(&self, count: usize) -> (Self, Self) {
-        let (l, r) = self.tokens.split_at(count);
-        (Self::new(l), Self::new(r))
+        let (pre, post) = self.tokens.split_at(count);
+        (Self::new(post), Self::new(pre))
     }
 }
 impl<'i> InputIter for TokenStream<'i> {
@@ -63,31 +58,35 @@ impl<'i> InputIter for TokenStream<'i> {
     where
         P: Fn(Self::Item) -> bool,
     {
-        self.position(predicate)
+        self.tokens.iter().position(predicate)
     }
 
-    fn slice_index(&self, _count: usize) -> Result<usize, nom::Needed> {
-        todo!()
+    fn slice_index(&self, count: usize) -> Result<usize, nom::Needed> {
+        if self.tokens.len() >= count {
+            Ok(count)
+        } else {
+            Err(Needed::new(count - self.tokens.len()))
+        }
     }
 }
 
 impl Slice<Range<usize>> for TokenStream<'_> {
-    fn slice(&self, range: Range<usize>) -> Self {
-        Self::new(&self.tokens[range])
+    fn slice(&self, _range: Range<usize>) -> Self {
+        todo!()
     }
 }
 impl Slice<RangeFrom<usize>> for TokenStream<'_> {
-    fn slice(&self, range: RangeFrom<usize>) -> Self {
-        Self::new(&self.tokens[range])
+    fn slice(&self, _range: RangeFrom<usize>) -> Self {
+        todo!()
     }
 }
 impl Slice<RangeTo<usize>> for TokenStream<'_> {
-    fn slice(&self, range: RangeTo<usize>) -> Self {
-        Self::new(&self.tokens[range])
+    fn slice(&self, _range: RangeTo<usize>) -> Self {
+        todo!()
     }
 }
 impl Slice<RangeFull> for TokenStream<'_> {
-    fn slice(&self, range: RangeFull) -> Self {
-        Self::new(&self.tokens[range])
+    fn slice(&self, _range: RangeFull) -> Self {
+        self.clone()
     }
 }

@@ -6,7 +6,7 @@ pub struct Ident<'i> {
 }
 impl<'i> Ident<'i> {
     #[must_use]
-    pub(crate) fn new(name: &'i str) -> Self {
+    pub(crate) const fn new(name: &'i str) -> Self {
         Self { name }
     }
 }
@@ -23,6 +23,7 @@ pub enum Token<'i> {
     CloseParen,
     OpenBrace,
     CloseBrace,
+    Eof,
 }
 impl<'i> Token<'i> {
     #[must_use]
@@ -55,6 +56,7 @@ impl<'i> Display for Token<'i> {
             Token::CloseParen => write!(f, ")"),
             Token::OpenBrace => write!(f, "{{"),
             Token::CloseBrace => write!(f, "}}"),
+            Token::Eof => write!(f, ""),
         }
     }
 }

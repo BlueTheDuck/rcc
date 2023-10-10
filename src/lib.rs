@@ -1,3 +1,2 @@
-mod lexer;
-
-pub use lexer::lex;
+pub mod ast;
+pub mod lexer;

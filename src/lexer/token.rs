@@ -17,12 +17,27 @@ impl<'i> Display for Ident<'i> {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Literal {
+    Int(i64),
+}
+impl Display for Literal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Literal::Int(v) => write!(f, "{}", v),
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Token<'i> {
     Ident(Ident<'i>),
+    Literal(Literal),
     OpenParen,
     CloseParen,
     OpenBrace,
     CloseBrace,
+    Assign,
+    SemiColon,
     Eof,
 }
 impl<'i> Token<'i> {
@@ -42,6 +57,15 @@ impl<'i> Token<'i> {
     pub fn is_ident(&self) -> bool {
         matches!(self, Self::Ident(..))
     }
+
+    #[must_use]
+    pub fn as_literal(&self) -> Option<&Literal> {
+        if let Self::Literal(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
 }
 impl<'i> From<Ident<'i>> for Token<'i> {
     fn from(v: Ident<'i>) -> Self {
@@ -52,10 +76,13 @@ impl<'i> Display for Token<'i> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Token::Ident(ident) => write!(f, "{}", ident.name),
+            Token::Literal(literal) => write!(f, "{}", literal),
             Token::OpenParen => write!(f, "("),
             Token::CloseParen => write!(f, ")"),
             Token::OpenBrace => write!(f, "{{"),
             Token::CloseBrace => write!(f, "}}"),
+            Token::Assign => write!(f, "="),
+            Token::SemiColon => write!(f, ";"),
             Token::Eof => write!(f, ""),
         }
     }

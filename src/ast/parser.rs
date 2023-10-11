@@ -12,7 +12,7 @@ use crate::lexer::{
     token::{Ident, Keyword, Literal},
 };
 
-use super::tree::{control::If, Expression, FuncDecl, Statement, Typedef, VarDecl};
+use super::tree::{control::If, Assignment, Expression, FuncDecl, Statement, Typedef, VarDecl};
 
 mod blocks;
 mod tags;
@@ -104,12 +104,23 @@ fn parse_if(i: TokenStream<'_>) -> IResult<TokenStream, If> {
     .parse(i)
 }
 
+fn parse_assignment<'i>(input: TokenStream<'i>) -> IResult<TokenStream<'i>, Assignment<'i>> {
+    map(
+        terminated(
+            separated_pair(parse_ident, tags::assign, parse_value),
+            tags::semi_colon,
+        ),
+        |(lhs, rhs)| Assignment::from((lhs, rhs)),
+    )(input)
+}
+
 fn parse_statement<'i>(input: TokenStream<'i>) -> IResult<TokenStream<'i>, Statement<'i>> {
     alt((
         map(parse_fn, Statement::FuncDecl),
         map(parse_var_decl, Statement::VarDecl),
         map(parse_typedef, Statement::Typedef),
         map(parse_if, Statement::If),
+        map(parse_assignment, Statement::Assign),
     ))(input)
 }
 

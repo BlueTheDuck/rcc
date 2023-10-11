@@ -61,11 +61,19 @@ impl<'i> Display for Typedef<'i> {
 }
 
 #[derive(Debug, PartialEq, Eq, derive_more::Display, derive_more::From)]
+#[display(fmt = "{lhs} = {rhs};")]
+pub struct Assignment<'i> {
+    lhs: Ident<'i>,
+    rhs: Expression<'i>,
+}
+
+#[derive(Debug, PartialEq, Eq, derive_more::Display, derive_more::From)]
 pub enum Statement<'i> {
     FuncDecl(FuncDecl<'i>),
     VarDecl(VarDecl<'i>),
     Typedef(Typedef<'i>),
     If(control::If<'i>),
+    Assign(Assignment<'i>),
 }
 impl<'i> Statement<'i> {
     pub const fn new_func_decl(ret: Ident<'i>, name: Ident<'i>, body: Vec<Statement<'i>>) -> Self {

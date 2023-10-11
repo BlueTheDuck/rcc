@@ -50,14 +50,6 @@ impl<'i> Token<'i> {
         }
     }
 
-    /// Returns `true` if the token is [`Ident`].
-    ///
-    /// [`Ident`]: Token::Ident
-    #[must_use]
-    pub fn is_ident(&self) -> bool {
-        matches!(self, Self::Ident(..))
-    }
-
     #[must_use]
     pub fn as_literal(&self) -> Option<&Literal> {
         if let Self::Literal(v) = self {
@@ -65,11 +57,6 @@ impl<'i> Token<'i> {
         } else {
             None
         }
-    }
-}
-impl<'i> From<Ident<'i>> for Token<'i> {
-    fn from(v: Ident<'i>) -> Self {
-        Self::Ident(v)
     }
 }
 impl<'i> Display for Token<'i> {

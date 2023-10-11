@@ -14,24 +14,21 @@ use crate::lexer::{
 
 use super::tree::{FuncDecl, Statement, VarDecl};
 
-fn open_paren_tag<'i>(input: TokenStream<'i>) -> IResult<TokenStream<'i>, TokenStream<'i>> {
-    verify(take(1usize), |t: &TokenStream| t[0] == Token::OpenParen)(input)
+macro_rules! def_tag {
+    ($name:ident => $value:expr) => {
+        fn $name<'i>(i: TokenStream<'i>) -> IResult<TokenStream<'i>, TokenStream<'i>> {
+            verify(take(1usize), |t: &TokenStream| t[0] == $value)(i)
+        }
+    };
 }
-fn close_paren_tag<'i>(input: TokenStream<'i>) -> IResult<TokenStream<'i>, TokenStream<'i>> {
-    verify(take(1usize), |t: &TokenStream| t[0] == Token::CloseParen)(input)
-}
-fn open_brace_tag<'i>(input: TokenStream<'i>) -> IResult<TokenStream<'i>, TokenStream<'i>> {
-    verify(take(1usize), |t: &TokenStream| t[0] == Token::OpenBrace)(input)
-}
-fn close_brace_tag<'i>(input: TokenStream<'i>) -> IResult<TokenStream<'i>, TokenStream<'i>> {
-    verify(take(1usize), |t: &TokenStream| t[0] == Token::CloseBrace)(input)
-}
-fn assign_tag<'i>(input: TokenStream<'i>) -> IResult<TokenStream<'i>, TokenStream<'i>> {
-    verify(take(1usize), |t: &TokenStream| t[0] == Token::Assign)(input)
-}
-fn semi_colon_tag<'i>(input: TokenStream<'i>) -> IResult<TokenStream<'i>, TokenStream<'i>> {
-    verify(take(1usize), |t: &TokenStream| t[0] == Token::SemiColon)(input)
-}
+
+def_tag!(open_paren_tag => Token::OpenParen);
+def_tag!(close_paren_tag => Token::CloseParen);
+def_tag!(open_brace_tag => Token::OpenBrace);
+def_tag!(close_brace_tag => Token::CloseBrace);
+def_tag!(assign_tag => Token::Assign);
+def_tag!(semi_colon_tag => Token::SemiColon);
+
 fn eof_tag<'i>(input: TokenStream<'i>) -> IResult<TokenStream<'i>, TokenStream<'i>> {
     verify(take(1usize), |t: &TokenStream| t[0] == Token::Eof)(input)
 }

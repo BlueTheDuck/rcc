@@ -140,4 +140,23 @@ mod tests {
         let program = parse_program(PROGRAM_CODE);
         assert_eq!(program, PARSED);
     }
+
+    #[test]
+    fn test_parse_if() {
+        const PROGRAM_CODE: &str = r#"if(1 == 2) {}"#;
+        const PARSED: &[Token] = &[
+            Token::Keyword(Keyword::If),
+            Token::OpenParen,
+            Token::Literal(Literal::Int(1)),
+            Token::Equals,
+            Token::Literal(Literal::Int(2)),
+            Token::CloseParen,
+            Token::OpenBrace,
+            Token::CloseBrace,
+            Token::Eof,
+        ];
+
+        let program = parse_program(PROGRAM_CODE);
+        assert_eq!(program, PARSED);
+    }
 }

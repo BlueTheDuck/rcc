@@ -43,6 +43,7 @@ pub(super) fn parse_token(i: &str) -> IResult<&str, Token> {
         tag(")").map(|_| Token::CloseParen),
         tag("{").map(|_| Token::OpenBrace),
         tag("}").map(|_| Token::CloseBrace),
+        tag("==").map(|_| Token::Equals),
         tag("=").map(|_| Token::Assign),
         tag(";").map(|_| Token::SemiColon),
         parse_keyword.map(Token::Keyword),

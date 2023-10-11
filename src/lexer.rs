@@ -6,7 +6,7 @@ pub mod token;
 mod tests {
     use crate::lexer::{
         parsers::{parse_ident, parse_program},
-        token::{Ident, Token},
+        token::{Ident, Keyword, Literal, Token},
     };
 
     #[test]
@@ -102,6 +102,37 @@ mod tests {
         const PARSED: &[Token] = &[
             Token::Ident(Ident::new("int")),
             Token::Ident(Ident::new("a")),
+            Token::SemiColon,
+            Token::Eof,
+        ];
+
+        let program = parse_program(PROGRAM_CODE);
+        assert_eq!(program, PARSED);
+    }
+
+    #[test]
+    fn test_parse_typedef() {
+        const PROGRAM_CODE: &str = r#"typedef int int32_t;"#;
+        const PARSED: &[Token] = &[
+            Token::Keyword(Keyword::Typedef),
+            Token::Ident(Ident::new("int")),
+            Token::Ident(Ident::new("int32_t")),
+            Token::SemiColon,
+            Token::Eof,
+        ];
+
+        let program = parse_program(PROGRAM_CODE);
+        assert_eq!(program, PARSED);
+    }
+
+    #[test]
+    fn test_parse_typedef_space() {
+        const PROGRAM_CODE: &str = r#"typedef unsigned int uint32_t;"#;
+        const PARSED: &[Token] = &[
+            Token::Keyword(Keyword::Typedef),
+            Token::Ident(Ident::new("unsigned")),
+            Token::Ident(Ident::new("int")),
+            Token::Ident(Ident::new("uint32_t")),
             Token::SemiColon,
             Token::Eof,
         ];

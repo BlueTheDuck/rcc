@@ -1,19 +1,20 @@
 use nom::{
     branch::alt,
     bytes::complete::take,
-    combinator::{map, map_opt, verify, opt},
-    multi::many0,
-    sequence::{terminated, tuple, preceded},
-    IResult,
+    combinator::{map, map_opt, opt, verify},
+    multi::{many0, many1},
+    sequence::{delimited, preceded, terminated, tuple},
+    IResult, Parser,
 };
 
 use crate::lexer::{
     stream::TokenStream,
-    token::{Ident, Literal, Token},
+    token::{Ident, Keyword, Literal},
 };
 
-use super::tree::{FuncDecl, Statement, VarDecl};
+use super::tree::{FuncDecl, Statement, Typedef, VarDecl};
 
+mod blocks;
 mod tags;
 
 pub(super) fn parse_ident<'i>(i: TokenStream<'i>) -> IResult<TokenStream<'i>, Ident> {
@@ -57,11 +58,24 @@ fn parse_fn<'i>(input: TokenStream<'i>) -> IResult<TokenStream, FuncDecl> {
     )(input)
 }
 
+fn parse_typedef<'i>(i: TokenStream<'i>) -> IResult<TokenStream<'i>, Typedef<'i>> {
+    delimited(
+        tags::keyword(Keyword::Typedef),
+        verify(many1(parse_ident), |t: &Vec<Ident>| t.len() >= 2),
+        tags::semi_colon,
+    )
+    .map(|mut idents| {
+        let name = idents.pop().unwrap();
+        Typedef { ty: idents, name }
+    })
+    .parse(i)
+}
+
 fn parse_statement<'i>(input: TokenStream<'i>) -> IResult<TokenStream<'i>, Statement<'i>> {
     alt((
         map(parse_fn, Statement::FuncDecl),
         map(parse_var_decl, Statement::VarDecl),
-        /* |i: TokenStream| { panic!("Unimplemented: {:?}", i.tokens) } */
+        map(parse_typedef, Statement::Typedef),
     ))(input)
 }
 

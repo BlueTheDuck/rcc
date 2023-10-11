@@ -23,3 +23,20 @@ def_tag!(pub(crate) semi_colon => Token::SemiColon);
 pub(crate) fn eof<'i>(input: TokenStream<'i>) -> IResult<TokenStream<'i>, TokenStream<'i>> {
     verify(take(1usize), |t: &TokenStream| t[0] == Token::Eof)(input)
 }
+
+pub(crate) fn keyword<'i>(
+    keyword: Keyword,
+) -> impl FnMut(TokenStream<'i>) -> IResult<TokenStream<'i>, (), nom::error::Error<TokenStream<'i>>>
+{
+    move |i: TokenStream<'i>| {
+        let orig = i.clone();
+        let (i, t) = take(1usize)(i)?;
+        match t[0].as_keyword() {
+            Some(&k) if k == keyword => Ok((i, ())),
+            _ => Err(nom::Err::Error(nom::error::Error::new(
+                orig,
+                nom::error::ErrorKind::Tag,
+            ))),
+        }
+    }
+}

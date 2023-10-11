@@ -1,6 +1,20 @@
 use std::fmt::Display;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Keyword {
+    Typedef,
+    If,
+}
+impl Display for Keyword {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Keyword::Typedef => write!(f, "typedef"),
+            Keyword::If => write!(f, "if"),
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Ident<'i> {
     name: &'i str,
 }
@@ -30,6 +44,7 @@ impl Display for Literal {
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Token<'i> {
+    Keyword(Keyword),
     Ident(Ident<'i>),
     Literal(Literal),
     OpenParen,
@@ -41,6 +56,15 @@ pub enum Token<'i> {
     Eof,
 }
 impl<'i> Token<'i> {
+    #[must_use]
+    pub fn as_keyword(&self) -> Option<&Keyword> {
+        if let Self::Keyword(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
     #[must_use]
     pub fn as_ident(&self) -> Option<&Ident<'i>> {
         if let Self::Ident(v) = self {
@@ -62,6 +86,7 @@ impl<'i> Token<'i> {
 impl<'i> Display for Token<'i> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Token::Keyword(keyword) => write!(f, "{}", keyword),
             Token::Ident(ident) => write!(f, "{}", ident.name),
             Token::Literal(literal) => write!(f, "{}", literal),
             Token::OpenParen => write!(f, "("),

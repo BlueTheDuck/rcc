@@ -26,25 +26,40 @@ pub struct VarDecl<'i> {
 }
 
 #[derive(Debug, PartialEq, Eq)]
+pub struct Typedef<'i> {
+    pub ty: Vec<Ident<'i>>,
+    pub name: Ident<'i>,
+}
+impl<'i> Typedef<'i> {
+    pub fn new(ty: Vec<Ident<'i>>, name: Ident<'i>) -> Self {
+        Self { ty, name }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
 pub enum Statement<'i> {
     FuncDecl(FuncDecl<'i>),
     VarDecl(VarDecl<'i>),
+    Typedef(Typedef<'i>),
 }
-
 impl<'i> Statement<'i> {
     pub const fn new_func_decl(ret: Ident<'i>, name: Ident<'i>, body: Vec<Statement<'i>>) -> Self {
-        Self::FuncDecl(FuncDecl {
-            ret,
-            name,
-            body,
-        })
+        Self::FuncDecl(FuncDecl { ret, name, body })
     }
     pub const fn new_var_decl(ty: Ident<'i>, name: Ident<'i>, value: Option<Literal>) -> Self {
-        Self::VarDecl(VarDecl {
-            ty,
-            name,
-            value,
-        })
+        Self::VarDecl(VarDecl { ty, name, value })
+    }
+    pub const fn new_typedef(ty: Vec<Ident<'i>>, name: Ident<'i>) -> Self {
+        Self::Typedef(Typedef { ty, name })
+    }
+
+    #[must_use]
+    pub fn as_typedef(&self) -> Option<&Typedef<'i>> {
+        if let Self::Typedef(v) = self {
+            Some(v)
+        } else {
+            None
+        }
     }
 }
 
@@ -59,8 +74,15 @@ impl<'i> Display for Statement<'i> {
                 }
                 write!(f, ";")?;
                 Ok(())
-            },
-            
+            }
+            Statement::Typedef(typedef) => {
+                write!(f, "typedef ")?;
+                for ty in typedef.ty.iter() {
+                    write!(f, "{} ", ty)?;
+                }
+                write!(f, "{};", typedef.name)?;
+                Ok(())
+            }
         }
     }
 }

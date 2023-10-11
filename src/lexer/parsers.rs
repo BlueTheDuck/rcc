@@ -8,7 +8,14 @@ use nom::{
     IResult, Parser,
 };
 
-use super::token::{Ident, Literal, Token};
+use super::token::{Ident, Keyword, Literal, Token};
+
+pub(crate) fn parse_keyword(i: &str) -> IResult<&str, Keyword> {
+    alt((
+        tag("typedef").map(|_| Keyword::Typedef),
+        tag("if").map(|_| Keyword::If),
+    ))(i)
+}
 
 pub(super) fn parse_ident(i: &str) -> IResult<&str, Ident> {
     let is_alphanumeric_underscore = |c: char| c.is_alphanumeric() || c == '_';
@@ -38,6 +45,7 @@ pub(super) fn parse_token(i: &str) -> IResult<&str, Token> {
         tag("}").map(|_| Token::CloseBrace),
         tag("=").map(|_| Token::Assign),
         tag(";").map(|_| Token::SemiColon),
+        parse_keyword.map(Token::Keyword),
         parse_ident.map(Token::Ident),
         parse_literal.map(Token::Literal),
     ))(i)

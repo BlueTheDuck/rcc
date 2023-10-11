@@ -1,20 +1,13 @@
-use std::fmt::Display;
-
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, derive_more::Display)]
 pub enum Keyword {
+    #[display(fmt = "typedef")]
     Typedef,
+
+    #[display(fmt = "if")]
     If,
 }
-impl Display for Keyword {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Keyword::Typedef => write!(f, "typedef"),
-            Keyword::If => write!(f, "if"),
-        }
-    }
-}
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, derive_more::Display)]
 pub struct Ident<'i> {
     name: &'i str,
 }
@@ -24,36 +17,40 @@ impl<'i> Ident<'i> {
         Self { name }
     }
 }
-impl<'i> Display for Ident<'i> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", &self.name)
-    }
-}
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, derive_more::Display)]
 pub enum Literal {
     Int(i64),
 }
-impl Display for Literal {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Literal::Int(v) => write!(f, "{}", v),
-        }
-    }
-}
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, derive_more::Display)]
 pub enum Token<'i> {
     Keyword(Keyword),
     Ident(Ident<'i>),
     Literal(Literal),
+
+    #[display(fmt = "(")]
     OpenParen,
+
+    #[display(fmt = ")")]
     CloseParen,
+
+    #[display(fmt = "{{")]
     OpenBrace,
+
+    #[display(fmt = "}}")]
     CloseBrace,
+
+    #[display(fmt = "==")]
     Equals,
+
+    #[display(fmt = "=")]
     Assign,
+
+    #[display(fmt = ";")]
     SemiColon,
+
+    #[display(fmt = "$")]
     Eof,
 }
 impl<'i> Token<'i> {
@@ -81,23 +78,6 @@ impl<'i> Token<'i> {
             Some(v)
         } else {
             None
-        }
-    }
-}
-impl<'i> Display for Token<'i> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Token::Keyword(keyword) => write!(f, "{}", keyword),
-            Token::Ident(ident) => write!(f, "{}", ident.name),
-            Token::Literal(literal) => write!(f, "{}", literal),
-            Token::OpenParen => write!(f, "("),
-            Token::CloseParen => write!(f, ")"),
-            Token::OpenBrace => write!(f, "{{"),
-            Token::CloseBrace => write!(f, "}}"),
-            Token::Equals => write!(f, "=="),
-            Token::Assign => write!(f, "="),
-            Token::SemiColon => write!(f, ";"),
-            Token::Eof => write!(f, ""),
         }
     }
 }

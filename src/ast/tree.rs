@@ -2,8 +2,8 @@ use std::fmt::Display;
 
 use crate::lexer::token::Ident;
 
-mod expr;
 pub mod control;
+mod expr;
 pub use expr::Expression;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -14,11 +14,11 @@ pub struct FuncDecl<'i> {
 }
 impl<'i> Display for FuncDecl<'i> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} {}() {{\n", self.ret, self.name)?;
+        writeln!(f, "{} {}() {{", self.ret, self.name)?;
         for stmt in self.body.iter() {
-            write!(f, "{stmt} \n")?;
+            writeln!(f, "{stmt} ")?;
         }
-        write!(f, "}}\n")
+        writeln!(f, "}}")
     }
 }
 
@@ -27,6 +27,16 @@ pub struct VarDecl<'i> {
     pub ty: Ident<'i>,
     pub name: Ident<'i>,
     pub value: Option<Expression<'i>>,
+}
+impl<'i> Display for VarDecl<'i> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{ty} {name}", ty = self.ty, name = self.name)?;
+        if let Some(ref value) = self.value {
+            write!(f, " = {value}")?;
+        }
+        writeln!(f, ";")?;
+        Ok(())
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -39,8 +49,18 @@ impl<'i> Typedef<'i> {
         Self { ty, name }
     }
 }
+impl<'i> Display for Typedef<'i> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "typedef ")?;
+        for ty in self.ty.iter() {
+            write!(f, "{ty} ")?;
+        }
+        writeln!(f, "{};", self.name)?;
+        Ok(())
+    }
+}
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, derive_more::Display, derive_more::From)]
 pub enum Statement<'i> {
     FuncDecl(FuncDecl<'i>),
     VarDecl(VarDecl<'i>),
@@ -51,7 +71,11 @@ impl<'i> Statement<'i> {
     pub const fn new_func_decl(ret: Ident<'i>, name: Ident<'i>, body: Vec<Statement<'i>>) -> Self {
         Self::FuncDecl(FuncDecl { ret, name, body })
     }
-    pub const fn new_var_decl(ty: Ident<'i>, name: Ident<'i>, value: Option<Expression<'i>>) -> Self {
+    pub const fn new_var_decl(
+        ty: Ident<'i>,
+        name: Ident<'i>,
+        value: Option<Expression<'i>>,
+    ) -> Self {
         Self::VarDecl(VarDecl { ty, name, value })
     }
     pub const fn new_typedef(ty: Vec<Ident<'i>>, name: Ident<'i>) -> Self {
@@ -64,39 +88,6 @@ impl<'i> Statement<'i> {
             Some(v)
         } else {
             None
-        }
-    }
-}
-
-impl<'i> Display for Statement<'i> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Statement::FuncDecl(func) => write!(f, "{func}"),
-            Statement::VarDecl(var) => {
-                write!(f, "{ty} {name}", ty = var.ty, name = var.name)?;
-                if let Some(ref value) = var.value {
-                    write!(f, " = {value}")?;
-                }
-                write!(f, ";")?;
-                Ok(())
-            }
-            Statement::Typedef(typedef) => {
-                write!(f, "typedef ")?;
-                for ty in typedef.ty.iter() {
-                    write!(f, "{} ", ty)?;
-                }
-                write!(f, "{};", typedef.name)?;
-                Ok(())
-            }
-            Statement::If(r#if) => {
-                writeln!(f, "if ({cond}) {{", cond = r#if.condition)?;
-                for stmt in r#if.body.iter() {
-                    writeln!(f, "{stmt} ")?;
-                }
-                writeln!(f, "}}")?;
-                Ok(())
-            },
-            
         }
     }
 }

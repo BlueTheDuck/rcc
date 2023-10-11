@@ -40,10 +40,7 @@ pub(crate) fn parse_top_level_expression<'i>(
     i: TokenStream<'i>,
 ) -> IResult<TokenStream<'i>, Expression<'i>> {
     let parse_equals = separated_pair(parse_value, tags::equals, parse_value);
-    alt((
-        map(parse_equals, Expression::new_equals),
-        parse_value
-    ))(i)
+    alt((map(parse_equals, Expression::new_equals), parse_value))(i)
 }
 
 fn parse_var_decl<'i>(input: TokenStream<'i>) -> IResult<TokenStream, VarDecl> {
@@ -136,7 +133,10 @@ pub fn parse_stream(tokens: TokenStream) -> Vec<Statement> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        ast::{parser::parse_if, tree::{Expression, Statement, VarDecl}},
+        ast::{
+            parser::parse_if,
+            tree::{Expression, Statement},
+        },
         lexer::{
             stream::TokenStream,
             token::{Ident, Keyword, Token},
@@ -158,9 +158,10 @@ mod tests {
             Token::Ident(IDENT_INT),
             Token::Ident(IDENT_B),
             Token::SemiColon,
-            Token::CloseBrace
+            Token::CloseBrace,
         ];
-        let (rest, r#if) = parse_if(TokenStream::new(TOKENS)).expect("Could not parse token stream");
+        let (rest, r#if) =
+            parse_if(TokenStream::new(TOKENS)).expect("Could not parse token stream");
         assert!(rest.tokens.is_empty());
 
         if let Expression::Ident(id) = r#if.condition {

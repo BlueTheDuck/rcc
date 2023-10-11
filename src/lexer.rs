@@ -46,6 +46,57 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_main_with_stmt() {
+        const PROGRAM_CODE: &str = r#"int main() {int x = 2;}"#;
+        const PARSED: &[Token] = &[
+            Token::Ident(Ident::new("int")),
+            Token::Ident(Ident::new("main")),
+            Token::OpenParen,
+            Token::CloseParen,
+            Token::OpenBrace,
+            Token::Ident(Ident::new("int")),
+            Token::Ident(Ident::new("x")),
+            Token::Assign,
+            Token::Literal(Literal::Int(2)),
+            Token::SemiColon,
+            Token::CloseBrace,
+            Token::Eof,
+        ];
+
+        let program = parse_program(PROGRAM_CODE);
+        assert_eq!(program, PARSED);
+    }
+    #[test]
+    fn test_parse_main_with_many_stmts() {
+        const PROGRAM_CODE: &str = r#"void main() {
+                                                 int x = 2;
+                                                 int y = 3;
+                                             }"#;
+        const PARSED: &[Token] = &[
+            Token::Ident(Ident::new("void")),
+            Token::Ident(Ident::new("main")),
+            Token::OpenParen,
+            Token::CloseParen,
+            Token::OpenBrace,
+            Token::Ident(Ident::new("int")),
+            Token::Ident(Ident::new("x")),
+            Token::Assign,
+            Token::Literal(Literal::Int(2)),
+            Token::SemiColon,
+            Token::Ident(Ident::new("int")),
+            Token::Ident(Ident::new("y")),
+            Token::Assign,
+            Token::Literal(Literal::Int(3)),
+            Token::SemiColon,
+            Token::CloseBrace,
+            Token::Eof,
+        ];
+
+        let program = parse_program(PROGRAM_CODE);
+        assert_eq!(program, PARSED);
+    }
+
+    #[test]
     fn test_parse_var_decl() {
         const PROGRAM_CODE: &str = r#"int a;"#;
         const PARSED: &[Token] = &[

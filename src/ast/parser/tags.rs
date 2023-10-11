@@ -7,7 +7,7 @@ use crate::lexer::{
 
 macro_rules! def_tag {
     ($v:vis $name:ident => $value:expr) => {
-        $v fn $name<'i>(i: TokenStream<'i>) -> IResult<TokenStream<'i>, TokenStream<'i>> {
+        $v fn $name(i: TokenStream) -> IResult<TokenStream, TokenStream> {
             verify(take(1usize), |t: &TokenStream| t[0] == $value)(i)
         }
     };
@@ -21,7 +21,7 @@ def_tag!(pub(crate) equals => Token::Equals);
 def_tag!(pub(crate) assign => Token::Assign);
 def_tag!(pub(crate) semi_colon => Token::SemiColon);
 
-pub(crate) fn eof<'i>(input: TokenStream<'i>) -> IResult<TokenStream<'i>, TokenStream<'i>> {
+pub(crate) fn eof(input: TokenStream) -> IResult<TokenStream, TokenStream> {
     verify(take(1usize), |t: &TokenStream| t[0] == Token::Eof)(input)
 }
 
@@ -30,7 +30,7 @@ pub(crate) fn keyword<'i>(
 ) -> impl FnMut(TokenStream<'i>) -> IResult<TokenStream<'i>, (), nom::error::Error<TokenStream<'i>>>
 {
     move |i: TokenStream<'i>| {
-        let orig = i.clone();
+        let orig = i;
         let (i, t) = take(1usize)(i)?;
         match t[0].as_keyword() {
             Some(&k) if k == keyword => Ok((i, ())),

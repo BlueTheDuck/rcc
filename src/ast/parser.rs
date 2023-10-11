@@ -3,7 +3,7 @@ use nom::{
     bytes::complete::take,
     combinator::{map, map_opt, opt, verify},
     multi::{many0, many1},
-    sequence::{delimited, preceded, terminated, tuple},
+    sequence::{delimited, pair, preceded, separated_pair, terminated, tuple},
     IResult, Parser,
 };
 
@@ -12,7 +12,7 @@ use crate::lexer::{
     token::{Ident, Keyword, Literal},
 };
 
-use super::tree::{FuncDecl, Statement, Typedef, VarDecl};
+use super::tree::{control::If, Expression, FuncDecl, Statement, Typedef, VarDecl};
 
 mod blocks;
 mod tags;
@@ -36,13 +36,13 @@ pub(crate) fn parse_value<'i>(i: TokenStream<'i>) -> IResult<TokenStream<'i>, Ex
     ))(i)
 }
 
-pub(crate) fn parse_top_level_expression<'i>(i: TokenStream<'i>) -> IResult<TokenStream<'i>, Expression<'i>> {
+pub(crate) fn parse_top_level_expression<'i>(
+    i: TokenStream<'i>,
+) -> IResult<TokenStream<'i>, Expression<'i>> {
     let parse_equals = separated_pair(parse_value, tags::equals, parse_value);
     alt((
-        map(parse_equals, |(lhs, rhs)| Expression::Equals {
-            lhs: Box::new(lhs),
-            rhs: Box::new(rhs),
-        }),
+        map(parse_equals, Expression::new_equals),
+        parse_value
     ))(i)
 }
 
@@ -88,15 +88,35 @@ fn parse_typedef<'i>(i: TokenStream<'i>) -> IResult<TokenStream<'i>, Typedef<'i>
     .parse(i)
 }
 
+fn parse_if(i: TokenStream<'_>) -> IResult<TokenStream, If> {
+    preceded(
+        tags::keyword(Keyword::If),
+        pair(
+            blocks::parens(parse_top_level_expression),
+            alt((
+                blocks::braces(many0(parse_statement)),
+                parse_statement.map(|s| vec![s]),
+            )),
+        ),
+    )
+    .map(|(cond, then)| If {
+        condition: cond,
+        body: then,
+        else_body: None,
+    })
+    .parse(i)
+}
+
 fn parse_statement<'i>(input: TokenStream<'i>) -> IResult<TokenStream<'i>, Statement<'i>> {
     alt((
         map(parse_fn, Statement::FuncDecl),
         map(parse_var_decl, Statement::VarDecl),
         map(parse_typedef, Statement::Typedef),
+        map(parse_if, Statement::If),
     ))(input)
 }
 
-pub fn parse_stream<'i>(tokens: TokenStream<'i>) -> Vec<Statement<'i>> {
+pub fn parse_stream(tokens: TokenStream) -> Vec<Statement> {
     match terminated(many0(parse_statement), tags::eof)(tokens) {
         Ok((rest, program)) => {
             if !rest.tokens.is_empty() {
@@ -110,5 +130,49 @@ pub fn parse_stream<'i>(tokens: TokenStream<'i>) -> Vec<Statement<'i>> {
         Err(e) => {
             panic!("Error: {:?}", e);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        ast::{parser::parse_if, tree::{Expression, Statement, VarDecl}},
+        lexer::{
+            stream::TokenStream,
+            token::{Ident, Keyword, Token},
+        },
+    };
+
+    #[test]
+    fn test_parse_if() {
+        const IDENT_INT: Ident = Ident::new("int");
+        const IDENT_A: Ident = Ident::new("a");
+        const IDENT_B: Ident = Ident::new("b");
+
+        const TOKENS: &[Token] = &[
+            Token::Keyword(Keyword::If),
+            Token::OpenParen,
+            Token::Ident(IDENT_A),
+            Token::CloseParen,
+            Token::OpenBrace,
+            Token::Ident(IDENT_INT),
+            Token::Ident(IDENT_B),
+            Token::SemiColon,
+            Token::CloseBrace
+        ];
+        let (rest, r#if) = parse_if(TokenStream::new(TOKENS)).expect("Could not parse token stream");
+        assert!(rest.tokens.is_empty());
+
+        if let Expression::Ident(id) = r#if.condition {
+            assert_eq!(id, IDENT_A);
+        } else {
+            panic!("Expected ident");
+        }
+
+        let body = match &r#if.body[..] {
+            [body] => body,
+            _ => panic!("Expected one statement"),
+        };
+        assert_eq!(body, &Statement::new_var_decl(IDENT_INT, IDENT_B, None));
     }
 }

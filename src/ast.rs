@@ -6,7 +6,7 @@ pub use parser::parse_stream;
 #[cfg(test)]
 mod tests {
     use crate::{
-        ast::tree::Statement,
+        ast::tree::{control::If, Expression, Statement},
         lexer::{
             stream::TokenStream,
             token::{Ident, Keyword, Token},
@@ -64,8 +64,8 @@ mod tests {
             Token::SemiColon,
             Token::Eof,
         ];
-        let (rest, parsed) =
-            parser::parse_top_level_expression(TokenStream::new(TOKENS)).expect("Could not parse expression");
+        let (rest, parsed) = parser::parse_top_level_expression(TokenStream::new(TOKENS))
+            .expect("Could not parse expression");
         assert_eq!(rest.tokens, &[Token::SemiColon, Token::Eof]);
         if let Expression::Equals { lhs, rhs } = parsed {
             assert_eq!(*lhs, Expression::Ident(Ident::new("x")));
@@ -75,4 +75,43 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_simple_if() {
+        const IDENT_INT: Ident = Ident::new("int");
+        const IDENT_X: Ident = Ident::new("x");
+        const IDENT_Y: Ident = Ident::new("y");
+        const TOKENS: &[Token] = &[
+            Token::Keyword(Keyword::If),
+            Token::OpenParen,
+            Token::Ident(IDENT_X),
+            Token::Equals,
+            Token::Ident(IDENT_Y),
+            Token::CloseParen,
+            Token::OpenBrace,
+            Token::Ident(IDENT_INT),
+            Token::Ident(IDENT_X),
+            Token::Assign,
+            Token::Ident(IDENT_Y),
+            Token::SemiColon,
+            Token::CloseBrace,
+            Token::Eof,
+        ];
+        let if_statement: Statement = Statement::If(If {
+            condition: Expression::new_equals((IDENT_X.into(), IDENT_Y.into())),
+            body: vec![Statement::new_var_decl(
+                IDENT_INT,
+                IDENT_X,
+                Some(IDENT_Y.into()),
+            )],
+            else_body: None,
+        });
+
+        let ast: Vec<Statement> = parser::parse_stream(TokenStream::new(TOKENS));
+
+        let statement = match &ast[..] {
+            [stmt] => stmt,
+            _ => panic!("Expected one statement"),
+        };
+        assert_eq!(statement, &if_statement);
+    }
 }

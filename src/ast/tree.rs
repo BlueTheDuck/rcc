@@ -3,6 +3,7 @@ use std::fmt::Display;
 use crate::lexer::token::Ident;
 
 mod expr;
+pub mod control;
 pub use expr::Expression;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -44,6 +45,7 @@ pub enum Statement<'i> {
     FuncDecl(FuncDecl<'i>),
     VarDecl(VarDecl<'i>),
     Typedef(Typedef<'i>),
+    If(control::If<'i>),
 }
 impl<'i> Statement<'i> {
     pub const fn new_func_decl(ret: Ident<'i>, name: Ident<'i>, body: Vec<Statement<'i>>) -> Self {
@@ -86,6 +88,15 @@ impl<'i> Display for Statement<'i> {
                 write!(f, "{};", typedef.name)?;
                 Ok(())
             }
+            Statement::If(r#if) => {
+                writeln!(f, "if ({cond}) {{", cond = r#if.condition)?;
+                for stmt in r#if.body.iter() {
+                    writeln!(f, "{stmt} ")?;
+                }
+                writeln!(f, "}}")?;
+                Ok(())
+            },
+            
         }
     }
 }

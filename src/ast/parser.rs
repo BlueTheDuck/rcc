@@ -14,24 +14,7 @@ use crate::lexer::{
 
 use super::tree::{FuncDecl, Statement, VarDecl};
 
-macro_rules! def_tag {
-    ($name:ident => $value:expr) => {
-        fn $name<'i>(i: TokenStream<'i>) -> IResult<TokenStream<'i>, TokenStream<'i>> {
-            verify(take(1usize), |t: &TokenStream| t[0] == $value)(i)
-        }
-    };
-}
-
-def_tag!(open_paren_tag => Token::OpenParen);
-def_tag!(close_paren_tag => Token::CloseParen);
-def_tag!(open_brace_tag => Token::OpenBrace);
-def_tag!(close_brace_tag => Token::CloseBrace);
-def_tag!(assign_tag => Token::Assign);
-def_tag!(semi_colon_tag => Token::SemiColon);
-
-fn eof_tag<'i>(input: TokenStream<'i>) -> IResult<TokenStream<'i>, TokenStream<'i>> {
-    verify(take(1usize), |t: &TokenStream| t[0] == Token::Eof)(input)
-}
+mod tags;
 
 pub(super) fn parse_ident<'i>(i: TokenStream<'i>) -> IResult<TokenStream<'i>, Ident> {
     map_opt(take(1usize), |t: TokenStream| {
@@ -47,12 +30,13 @@ fn parse_literal<'i>(i: TokenStream<'i>) -> IResult<TokenStream<'i>, Literal> {
 
 fn parse_var_decl<'i>(input: TokenStream<'i>) -> IResult<TokenStream, VarDecl> {
     map(
-        tuple((parse_ident, parse_ident, opt(preceded(assign_tag, parse_literal)), semi_colon_tag)),
-        |(ty, name, value, _)| VarDecl {
-            ty,
-            name,
-            value,
-        },
+        tuple((
+            parse_ident,
+            parse_ident,
+            opt(preceded(tags::assign, parse_literal)),
+            tags::semi_colon,
+        )),
+        |(ty, name, value, _)| VarDecl { ty, name, value },
     )(input)
 }
 
@@ -61,13 +45,11 @@ fn parse_fn<'i>(input: TokenStream<'i>) -> IResult<TokenStream, FuncDecl> {
         tuple((
             parse_ident,
             parse_ident,
-            open_paren_tag,
-            close_paren_tag,
-            open_brace_tag,
-            many0(parse_statement),
-            close_brace_tag,
+            tags::open_paren,
+            tags::close_paren,
+            blocks::braces(many0(parse_statement)),
         )),
-        |(ty, name, _, _, _, body, _)| FuncDecl {
+        |(ty, name, _, _, body)| FuncDecl {
             ret: ty,
             name,
             body,
@@ -84,7 +66,7 @@ fn parse_statement<'i>(input: TokenStream<'i>) -> IResult<TokenStream<'i>, State
 }
 
 pub fn parse_stream<'i>(tokens: TokenStream<'i>) -> Vec<Statement<'i>> {
-    match terminated(many0(parse_statement), eof_tag)(tokens) {
+    match terminated(many0(parse_statement), tags::eof)(tokens) {
         Ok((rest, program)) => {
             if !rest.tokens.is_empty() {
                 println!("Warning: {} tokens left over", rest.tokens.len());

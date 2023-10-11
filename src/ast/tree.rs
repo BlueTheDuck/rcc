@@ -1,6 +1,9 @@
 use std::fmt::Display;
 
-use crate::lexer::token::{Ident, Literal};
+use crate::lexer::token::Ident;
+
+mod expr;
+pub use expr::Expression;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct FuncDecl<'i> {
@@ -22,7 +25,7 @@ impl<'i> Display for FuncDecl<'i> {
 pub struct VarDecl<'i> {
     pub ty: Ident<'i>,
     pub name: Ident<'i>,
-    pub value: Option<Literal>,
+    pub value: Option<Expression<'i>>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -46,7 +49,7 @@ impl<'i> Statement<'i> {
     pub const fn new_func_decl(ret: Ident<'i>, name: Ident<'i>, body: Vec<Statement<'i>>) -> Self {
         Self::FuncDecl(FuncDecl { ret, name, body })
     }
-    pub const fn new_var_decl(ty: Ident<'i>, name: Ident<'i>, value: Option<Literal>) -> Self {
+    pub const fn new_var_decl(ty: Ident<'i>, name: Ident<'i>, value: Option<Expression<'i>>) -> Self {
         Self::VarDecl(VarDecl { ty, name, value })
     }
     pub const fn new_typedef(ty: Vec<Ident<'i>>, name: Ident<'i>) -> Self {
@@ -69,7 +72,7 @@ impl<'i> Display for Statement<'i> {
             Statement::FuncDecl(func) => write!(f, "{func}"),
             Statement::VarDecl(var) => {
                 write!(f, "{ty} {name}", ty = var.ty, name = var.name)?;
-                if let Some(value) = var.value {
+                if let Some(ref value) = var.value {
                     write!(f, " = {value}")?;
                 }
                 write!(f, ";")?;

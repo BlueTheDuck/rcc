@@ -29,12 +29,29 @@ fn parse_literal<'i>(i: TokenStream<'i>) -> IResult<TokenStream<'i>, Literal> {
     })(i)
 }
 
+pub(crate) fn parse_value<'i>(i: TokenStream<'i>) -> IResult<TokenStream<'i>, Expression<'i>> {
+    alt((
+        map(parse_literal, Expression::Literal),
+        map(parse_ident, Expression::Ident),
+    ))(i)
+}
+
+pub(crate) fn parse_top_level_expression<'i>(i: TokenStream<'i>) -> IResult<TokenStream<'i>, Expression<'i>> {
+    let parse_equals = separated_pair(parse_value, tags::equals, parse_value);
+    alt((
+        map(parse_equals, |(lhs, rhs)| Expression::Equals {
+            lhs: Box::new(lhs),
+            rhs: Box::new(rhs),
+        }),
+    ))(i)
+}
+
 fn parse_var_decl<'i>(input: TokenStream<'i>) -> IResult<TokenStream, VarDecl> {
     map(
         tuple((
             parse_ident,
             parse_ident,
-            opt(preceded(tags::assign, parse_literal)),
+            opt(preceded(tags::assign, parse_top_level_expression)),
             tags::semi_colon,
         )),
         |(ty, name, value, _)| VarDecl { ty, name, value },

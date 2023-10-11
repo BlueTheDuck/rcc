@@ -17,6 +17,7 @@ def_tag!(pub(crate) open_paren => Token::OpenParen);
 def_tag!(pub(crate) close_paren => Token::CloseParen);
 def_tag!(pub(crate) open_brace => Token::OpenBrace);
 def_tag!(pub(crate) close_brace => Token::CloseBrace);
+def_tag!(pub(crate) equals => Token::Equals);
 def_tag!(pub(crate) assign => Token::Assign);
 def_tag!(pub(crate) semi_colon => Token::SemiColon);
 

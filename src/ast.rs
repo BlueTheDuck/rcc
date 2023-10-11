@@ -54,4 +54,25 @@ mod tests {
             panic!("Expected one statement")
         }
     }
+
+    #[test]
+    fn test_simple_equals() {
+        const TOKENS: &[Token] = &[
+            Token::Ident(Ident::new("x")),
+            Token::Equals,
+            Token::Ident(Ident::new("y")),
+            Token::SemiColon,
+            Token::Eof,
+        ];
+        let (rest, parsed) =
+            parser::parse_top_level_expression(TokenStream::new(TOKENS)).expect("Could not parse expression");
+        assert_eq!(rest.tokens, &[Token::SemiColon, Token::Eof]);
+        if let Expression::Equals { lhs, rhs } = parsed {
+            assert_eq!(*lhs, Expression::Ident(Ident::new("x")));
+            assert_eq!(*rhs, Expression::Ident(Ident::new("y")));
+        } else {
+            panic!("Expected equals expression")
+        }
+    }
+
 }

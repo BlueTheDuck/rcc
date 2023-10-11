@@ -1,8 +1,8 @@
 use nom::{
     branch::alt,
-    bytes::complete::tag,
-    character::complete::{alpha1, alphanumeric0, digit1, multispace0},
-    combinator::{opt, recognize},
+    bytes::complete::{tag, take_while1},
+    character::complete::{digit1, multispace0},
+    combinator::{opt, recognize, verify},
     multi::many0,
     sequence::{delimited, pair},
     IResult, Parser,
@@ -11,9 +11,14 @@ use nom::{
 use super::token::{Ident, Literal, Token};
 
 pub(super) fn parse_ident(i: &str) -> IResult<&str, Ident> {
-    recognize(pair(alt((tag("_"), alpha1)), alphanumeric0))
-        .map(Ident::new)
-        .parse(i)
+    let is_alphanumeric_underscore = |c: char| c.is_alphanumeric() || c == '_';
+
+    verify(
+        recognize(take_while1(is_alphanumeric_underscore)),
+        |s: &str| s.starts_with(|p: char| p.is_alphabetic() || p == '_'),
+    )
+    .map(Ident::new)
+    .parse(i)
 }
 
 pub(super) fn parse_literal(i: &str) -> IResult<&str, Literal> {

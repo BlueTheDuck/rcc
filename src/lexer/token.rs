@@ -5,6 +5,9 @@ pub enum Keyword {
 
     #[display(fmt = "if")]
     If,
+
+    #[display(fmt = "else")]
+    Else,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, derive_more::Display)]

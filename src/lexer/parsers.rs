@@ -14,6 +14,7 @@ pub(crate) fn parse_keyword(i: &str) -> IResult<&str, Keyword> {
     alt((
         tag("typedef").map(|_| Keyword::Typedef),
         tag("if").map(|_| Keyword::If),
+        tag("else").map(|_| Keyword::Else),
     ))(i)
 }
 

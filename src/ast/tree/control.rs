@@ -6,7 +6,7 @@ use super::{Expression, Statement};
 pub struct If<'i> {
     pub condition: Expression<'i>,
     pub body: Vec<Statement<'i>>,
-    pub else_body: Option<Vec<Expression<'i>>>,
+    pub else_body: Option<Vec<Statement<'i>>>,
 }
 impl<'i> Display for If<'i> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

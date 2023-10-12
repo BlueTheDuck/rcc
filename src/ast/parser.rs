@@ -85,21 +85,28 @@ fn parse_typedef<'i>(i: TokenStream<'i>) -> IResult<TokenStream<'i>, Typedef<'i>
     .parse(i)
 }
 
-fn parse_if(i: TokenStream<'_>) -> IResult<TokenStream, If> {
+fn parse_if(i: TokenStream) -> IResult<TokenStream, If> {
+    fn block_or_stmt(
+        i: TokenStream,
+    ) -> IResult<TokenStream, Vec<Statement>> {
+        alt((
+            blocks::braces(many0(parse_statement)),
+            parse_statement.map(|s| vec![s]),
+        ))(i)
+    }
+
     preceded(
         tags::keyword(Keyword::If),
-        pair(
+        tuple((
             blocks::parens(parse_top_level_expression),
-            alt((
-                blocks::braces(many0(parse_statement)),
-                parse_statement.map(|s| vec![s]),
-            )),
-        ),
+            block_or_stmt,
+            opt(preceded(tags::keyword(Keyword::Else), block_or_stmt)),
+        )),
     )
-    .map(|(cond, then)| If {
+    .map(|(cond, then, r#else)| If {
         condition: cond,
         body: then,
-        else_body: None,
+        else_body: r#else,
     })
     .parse(i)
 }

@@ -160,7 +160,6 @@ mod tests {
         assert_eq!(program, PARSED);
     }
 
-
     #[test]
     fn test_parse_with_pointers() {
         const IDENT_INT: Ident = Ident::new("int");

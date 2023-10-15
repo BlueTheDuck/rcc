@@ -6,21 +6,18 @@ pub mod control;
 mod expr;
 pub use expr::Expression;
 
-
-#[derive(Debug, PartialEq, Eq, derive_more::From)]
+#[derive(Debug, PartialEq, Eq, derive_more::From, derive_more::Display)]
 pub enum Declarator<'i> {
     Ident(Ident<'i>),
+
+    #[display(fmt = "*{}", _0)]
     Pointer(Box<Declarator<'i>>),
-    /* Array(Box<Declarator<'i>>, usize),
-    Function(Box<Declarator<'i>>, Vec<Ident<'i>>), */
-}
-impl<'i> Display for Declarator<'i> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Declarator::Ident(ident) => write!(f, "{ident}"),
-            Declarator::Pointer(ptr) => write!(f, "*{ptr}"),
-        }
-    }
+    /*
+    #[display(fmt = "{}[{}]", _0, _1)]
+    Array(Box<Declarator<'i>>, usize),
+
+    Function(Box<Declarator<'i>>, Vec<Ident<'i>>),
+    */
 }
 
 #[derive(Debug, PartialEq, Eq)]

@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use clap::Parser;
-use rcc::{ast::parse_stream};
+use rcc::ast::parse_stream;
 
 #[derive(Parser)]
 struct Args {
@@ -28,15 +28,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let content = unsafe { memmap2::Mmap::map(&file)? };
     let content = std::str::from_utf8(&content)?;
 
-    let parsed = rcc::lexer::parsers::parse_program(&content);
+    let parsed = rcc::lexer::parsers::parse_program(content);
     let stream = rcc::lexer::stream::TokenStream::new(&parsed);
 
-    if true || args.verbose {
-        for token in &parsed {
-            print!("{} ", token);
-        }
-        println!();
+    for token in &parsed {
+        print!("{} ", token);
     }
+    println!();
 
     let program = parse_stream(stream);
     for node in program {

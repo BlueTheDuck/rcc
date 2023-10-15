@@ -87,6 +87,6 @@ impl Slice<RangeTo<usize>> for TokenStream<'_> {
 }
 impl Slice<RangeFull> for TokenStream<'_> {
     fn slice(&self, _range: RangeFull) -> Self {
-        self.clone()
+        *self
     }
 }

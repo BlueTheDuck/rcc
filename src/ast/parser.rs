@@ -9,23 +9,26 @@ use nom::{
 
 use crate::lexer::{
     stream::TokenStream,
-    token::{Ident, Keyword, Literal},
+    token::{Ident, Keyword},
 };
 
 use super::tree::{
-    control::If, Assignment, Declarator, Expression, FuncDecl, Statement, Typedef, VarDecl,
+    control::If, Assignment, Declarator, FuncDecl, Statement, Typedef, VarDecl,
 };
 
 mod blocks;
+pub mod expr;
 mod tags;
 
-pub(super) fn parse_ident<'i>(i: TokenStream<'i>) -> IResult<TokenStream<'i>, Ident> {
+pub use expr::parse_top_level_expression;
+
+pub(super) fn parse_ident(i: TokenStream) -> IResult<TokenStream, Ident> {
     map_opt(take(1usize), |t: TokenStream| {
         t.tokens[0].as_ident().copied()
     })(i)
 }
 
-pub(super) fn parse_declarator<'i>(i: TokenStream<'i>) -> IResult<TokenStream<'i>, Declarator<'i>> {
+pub(super) fn parse_declarator(i: TokenStream) -> IResult<TokenStream, Declarator> {
     alt((
         map(parse_ident, Declarator::Ident),
         map(preceded(tags::star, parse_declarator), |d| {
@@ -34,39 +37,7 @@ pub(super) fn parse_declarator<'i>(i: TokenStream<'i>) -> IResult<TokenStream<'i
     ))(i)
 }
 
-fn parse_literal<'i>(i: TokenStream<'i>) -> IResult<TokenStream<'i>, Literal> {
-    map_opt(take(1usize), |t: TokenStream| {
-        t.tokens[0].as_literal().copied()
-    })(i)
-}
-
-pub(crate) fn parse_value<'i>(i: TokenStream<'i>) -> IResult<TokenStream<'i>, Expression<'i>> {
-    alt((
-        map(parse_literal, Expression::Literal),
-        map(parse_ident, Expression::Ident),
-    ))(i)
-}
-
-pub(crate) fn parse_top_level_expression<'i>(
-    i: TokenStream<'i>,
-) -> IResult<TokenStream<'i>, Expression<'i>> {
-    let parse_equals = separated_pair(parse_value, tags::equals, parse_value);
-    alt((map(parse_equals, Expression::new_equals), parse_value))(i)
-}
-
-fn parse_var_decl<'i>(input: TokenStream<'i>) -> IResult<TokenStream, VarDecl> {
-    map(
-        tuple((
-            parse_ident,
-            parse_declarator,
-            opt(preceded(tags::assign, parse_top_level_expression)),
-            tags::semi_colon,
-        )),
-        |(ty, name, value, _)| VarDecl { ty, name, value },
-    )(input)
-}
-
-fn parse_fn<'i>(input: TokenStream<'i>) -> IResult<TokenStream, FuncDecl> {
+fn parse_fn(input: TokenStream) -> IResult<TokenStream, FuncDecl> {
     let params_parser = alt((
         verify(parse_ident, |&ident| ident.name == "void").map(|_| vec![]),
         separated_list0(tags::comma, pair(parse_ident, parse_declarator)),
@@ -88,7 +59,19 @@ fn parse_fn<'i>(input: TokenStream<'i>) -> IResult<TokenStream, FuncDecl> {
     )(input)
 }
 
-fn parse_typedef<'i>(i: TokenStream<'i>) -> IResult<TokenStream<'i>, Typedef<'i>> {
+fn parse_var_decl(input: TokenStream) -> IResult<TokenStream, VarDecl> {
+    map(
+        tuple((
+            parse_ident,
+            parse_declarator,
+            opt(preceded(tags::assign, parse_top_level_expression)),
+            tags::semi_colon,
+        )),
+        |(ty, name, value, _)| VarDecl { ty, name, value },
+    )(input)
+}
+
+fn parse_typedef(i: TokenStream) -> IResult<TokenStream, Typedef> {
     delimited(
         tags::keyword(Keyword::Typedef),
         verify(many1(parse_ident), |t: &Vec<Ident>| t.len() >= 2),
@@ -125,17 +108,17 @@ fn parse_if(i: TokenStream) -> IResult<TokenStream, If> {
     .parse(i)
 }
 
-fn parse_assignment<'i>(input: TokenStream<'i>) -> IResult<TokenStream<'i>, Assignment<'i>> {
+fn parse_assignment(input: TokenStream) -> IResult<TokenStream, Assignment> {
     map(
         terminated(
-            separated_pair(parse_ident, tags::assign, parse_value),
+            separated_pair(parse_ident, tags::assign, parse_top_level_expression),
             tags::semi_colon,
         ),
         |(lhs, rhs)| Assignment::from((lhs, rhs)),
     )(input)
 }
 
-fn parse_statement<'i>(input: TokenStream<'i>) -> IResult<TokenStream<'i>, Statement<'i>> {
+fn parse_statement(input: TokenStream) -> IResult<TokenStream, Statement> {
     alt((
         map(parse_fn, Statement::FuncDecl),
         map(parse_var_decl, Statement::VarDecl),
@@ -154,7 +137,8 @@ pub fn parse_stream(tokens: TokenStream) -> Vec<Statement> {
                     println!("  {:?}", t);
                 }
             }
-            return program;
+
+            program
         }
         Err(e) => {
             panic!("Error: {:?}", e);
@@ -206,6 +190,9 @@ mod tests {
             [body] => body,
             _ => panic!("Expected one statement"),
         };
-        assert_eq!(body, &Statement::new_var_decl(IDENT_INT, IDENT_B.into(), None));
+        assert_eq!(
+            body,
+            &Statement::new_var_decl(IDENT_INT, IDENT_B.into(), None)
+        );
     }
 }

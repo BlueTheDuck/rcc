@@ -12,7 +12,7 @@ pub enum Keyword {
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, derive_more::Display)]
 pub struct Ident<'i> {
-    name: &'i str,
+    pub(crate) name: &'i str,
 }
 impl<'i> Ident<'i> {
     #[must_use]
@@ -52,6 +52,12 @@ pub enum Token<'i> {
 
     #[display(fmt = ";")]
     SemiColon,
+
+    #[display(fmt = ",")]
+    Comma,
+
+    #[display(fmt = "*")]
+    Star,
 
     #[display(fmt = "$")]
     Eof,

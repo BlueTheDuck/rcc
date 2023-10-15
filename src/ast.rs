@@ -6,7 +6,7 @@ pub use parser::parse_stream;
 #[cfg(test)]
 mod tests {
     use crate::{
-        ast::tree::{control::If, Expression, Statement},
+        ast::tree::{control::If, Declarator, Expression, Statement},
         lexer::{
             stream::TokenStream,
             token::{Ident, Keyword, Token},
@@ -17,18 +17,23 @@ mod tests {
 
     #[test]
     fn test_parse_empty_main() {
+        const IDENT_INT: Ident = Ident::new("int");
+        const IDENT_MAIN: Ident = Ident::new("main");
+        const IDENT_VOID: Ident = Ident::new("void");
         const TOKENS: &[Token] = &[
-            Token::Ident(Ident::new("int")),
-            Token::Ident(Ident::new("main")),
+            Token::Ident(IDENT_INT),
+            Token::Ident(IDENT_MAIN),
             Token::OpenParen,
+            Token::Ident(IDENT_VOID),
             Token::CloseParen,
             Token::OpenBrace,
             Token::CloseBrace,
             Token::Eof,
         ];
         const PARSED: &[Statement] = &[Statement::new_func_decl(
-            Ident::new("int"),
-            Ident::new("main"),
+            IDENT_INT,
+            IDENT_MAIN,
+            vec![],
             vec![],
         )];
 
@@ -100,7 +105,7 @@ mod tests {
             condition: Expression::new_equals((IDENT_X.into(), IDENT_Y.into())),
             body: vec![Statement::new_var_decl(
                 IDENT_INT,
-                IDENT_X,
+                IDENT_X.into(),
                 Some(IDENT_Y.into()),
             )],
             else_body: None,
@@ -113,5 +118,54 @@ mod tests {
             _ => panic!("Expected one statement"),
         };
         assert_eq!(statement, &if_statement);
+    }
+
+    #[test]
+    fn test_declarations_with_pointer() {
+        const IDENT_INT: Ident = Ident::new("int");
+        const IDENT_MAIN: Ident = Ident::new("main");
+        const IDENT_ARGC: Ident = Ident::new("argc");
+        const IDENT_ARGV: Ident = Ident::new("argv");
+        const IDENT_CHAR: Ident = Ident::new("char");
+        const IDENT_PTR: Ident = Ident::new("ptr");
+        const PARSED: &[Token] = &[
+            Token::Ident(IDENT_INT),
+            Token::Ident(IDENT_MAIN),
+            Token::OpenParen,
+            Token::Ident(IDENT_INT),
+            Token::Ident(IDENT_ARGC),
+            Token::Comma,
+            Token::Ident(IDENT_CHAR),
+            Token::Star,
+            Token::Star,
+            Token::Ident(IDENT_ARGV),
+            Token::CloseParen,
+            Token::OpenBrace,
+            Token::Ident(IDENT_INT),
+            Token::Star,
+            Token::Ident(IDENT_PTR),
+            Token::SemiColon,
+            Token::CloseBrace,
+            Token::Eof,
+        ];
+        let parsed_ast: &[Statement] = &[Statement::new_func_decl(
+            IDENT_INT,
+            IDENT_MAIN,
+            vec![
+                (IDENT_INT, IDENT_ARGC.into()),
+                (
+                    IDENT_CHAR,
+                    Declarator::Pointer(Box::new(Declarator::Pointer(Box::new(IDENT_ARGV.into())))),
+                ),
+            ],
+            vec![Statement::new_var_decl(
+                IDENT_INT,
+                Declarator::Pointer(Box::new(IDENT_PTR.into())),
+                None,
+            )],
+        )];
+
+        let ast = parse_stream(TokenStream::new(PARSED));
+        assert_eq!(ast, parsed_ast);
     }
 }

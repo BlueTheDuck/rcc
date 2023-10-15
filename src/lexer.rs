@@ -159,4 +159,34 @@ mod tests {
         let program = parse_program(PROGRAM_CODE);
         assert_eq!(program, PARSED);
     }
+
+
+    #[test]
+    fn test_parse_with_pointers() {
+        const IDENT_INT: Ident = Ident::new("int");
+        const PROGRAM_CODE: &str = r#"int main(int argc, char** argv) {int *ptr;}"#;
+        const PARSED: &[Token] = &[
+            Token::Ident(IDENT_INT),
+            Token::Ident(Ident::new("main")),
+            Token::OpenParen,
+            Token::Ident(IDENT_INT),
+            Token::Ident(Ident::new("argc")),
+            Token::Comma,
+            Token::Ident(Ident::new("char")),
+            Token::Star,
+            Token::Star,
+            Token::Ident(Ident::new("argv")),
+            Token::CloseParen,
+            Token::OpenBrace,
+            Token::Ident(IDENT_INT),
+            Token::Star,
+            Token::Ident(Ident::new("ptr")),
+            Token::SemiColon,
+            Token::CloseBrace,
+            Token::Eof,
+        ];
+
+        let program = parse_program(PROGRAM_CODE);
+        assert_eq!(program, PARSED);
+    }
 }

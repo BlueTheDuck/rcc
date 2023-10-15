@@ -6,15 +6,37 @@ pub mod control;
 mod expr;
 pub use expr::Expression;
 
+
+#[derive(Debug, PartialEq, Eq, derive_more::From)]
+pub enum Declarator<'i> {
+    Ident(Ident<'i>),
+    Pointer(Box<Declarator<'i>>),
+    /* Array(Box<Declarator<'i>>, usize),
+    Function(Box<Declarator<'i>>, Vec<Ident<'i>>), */
+}
+impl<'i> Display for Declarator<'i> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Declarator::Ident(ident) => write!(f, "{ident}"),
+            Declarator::Pointer(ptr) => write!(f, "*{ptr}"),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct FuncDecl<'i> {
     pub ret: Ident<'i>,
     pub name: Ident<'i>,
+    pub args: Vec<(Ident<'i>, Declarator<'i>)>,
     pub body: Vec<Statement<'i>>,
 }
 impl<'i> Display for FuncDecl<'i> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "{} {}() {{", self.ret, self.name)?;
+        write!(f, "{} {}(", self.ret, self.name)?;
+        for (ty, name) in self.args.iter() {
+            write!(f, "{ty} {name}, ", ty = ty, name = name)?;
+        }
+        writeln!(f, ") {{")?;
         for stmt in self.body.iter() {
             writeln!(f, "{stmt} ")?;
         }
@@ -25,7 +47,7 @@ impl<'i> Display for FuncDecl<'i> {
 #[derive(Debug, PartialEq, Eq)]
 pub struct VarDecl<'i> {
     pub ty: Ident<'i>,
-    pub name: Ident<'i>,
+    pub name: Declarator<'i>,
     pub value: Option<Expression<'i>>,
 }
 impl<'i> Display for VarDecl<'i> {
@@ -76,12 +98,22 @@ pub enum Statement<'i> {
     Assign(Assignment<'i>),
 }
 impl<'i> Statement<'i> {
-    pub const fn new_func_decl(ret: Ident<'i>, name: Ident<'i>, body: Vec<Statement<'i>>) -> Self {
-        Self::FuncDecl(FuncDecl { ret, name, body })
+    pub const fn new_func_decl(
+        ret: Ident<'i>,
+        name: Ident<'i>,
+        args: Vec<(Ident<'i>, Declarator<'i>)>,
+        body: Vec<Statement<'i>>,
+    ) -> Self {
+        Self::FuncDecl(FuncDecl {
+            ret,
+            name,
+            args,
+            body,
+        })
     }
     pub const fn new_var_decl(
         ty: Ident<'i>,
-        name: Ident<'i>,
+        name: Declarator<'i>,
         value: Option<Expression<'i>>,
     ) -> Self {
         Self::VarDecl(VarDecl { ty, name, value })

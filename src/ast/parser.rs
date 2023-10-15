@@ -2,7 +2,7 @@ use nom::{
     branch::alt,
     bytes::complete::take,
     combinator::{map, map_opt, opt, verify},
-    multi::{many0, many1},
+    multi::{many0, many1, separated_list0},
     sequence::{delimited, pair, preceded, separated_pair, terminated, tuple},
     IResult, Parser,
 };
@@ -12,7 +12,9 @@ use crate::lexer::{
     token::{Ident, Keyword, Literal},
 };
 
-use super::tree::{control::If, Assignment, Expression, FuncDecl, Statement, Typedef, VarDecl};
+use super::tree::{
+    control::If, Assignment, Declarator, Expression, FuncDecl, Statement, Typedef, VarDecl,
+};
 
 mod blocks;
 mod tags;
@@ -21,6 +23,15 @@ pub(super) fn parse_ident<'i>(i: TokenStream<'i>) -> IResult<TokenStream<'i>, Id
     map_opt(take(1usize), |t: TokenStream| {
         t.tokens[0].as_ident().copied()
     })(i)
+}
+
+pub(super) fn parse_declarator<'i>(i: TokenStream<'i>) -> IResult<TokenStream<'i>, Declarator<'i>> {
+    alt((
+        map(parse_ident, Declarator::Ident),
+        map(preceded(tags::star, parse_declarator), |d| {
+            Declarator::Pointer(Box::new(d))
+        }),
+    ))(i)
 }
 
 fn parse_literal<'i>(i: TokenStream<'i>) -> IResult<TokenStream<'i>, Literal> {
@@ -47,7 +58,7 @@ fn parse_var_decl<'i>(input: TokenStream<'i>) -> IResult<TokenStream, VarDecl> {
     map(
         tuple((
             parse_ident,
-            parse_ident,
+            parse_declarator,
             opt(preceded(tags::assign, parse_top_level_expression)),
             tags::semi_colon,
         )),
@@ -56,17 +67,22 @@ fn parse_var_decl<'i>(input: TokenStream<'i>) -> IResult<TokenStream, VarDecl> {
 }
 
 fn parse_fn<'i>(input: TokenStream<'i>) -> IResult<TokenStream, FuncDecl> {
+    let params_parser = alt((
+        verify(parse_ident, |&ident| ident.name == "void").map(|_| vec![]),
+        separated_list0(tags::comma, pair(parse_ident, parse_declarator)),
+    ));
+
     map(
         tuple((
             parse_ident,
             parse_ident,
-            tags::open_paren,
-            tags::close_paren,
+            blocks::parens(params_parser),
             blocks::braces(many0(parse_statement)),
         )),
-        |(ty, name, _, _, body)| FuncDecl {
+        |(ty, name, args, body)| FuncDecl {
             ret: ty,
             name,
+            args,
             body,
         },
     )(input)
@@ -86,9 +102,7 @@ fn parse_typedef<'i>(i: TokenStream<'i>) -> IResult<TokenStream<'i>, Typedef<'i>
 }
 
 fn parse_if(i: TokenStream) -> IResult<TokenStream, If> {
-    fn block_or_stmt(
-        i: TokenStream,
-    ) -> IResult<TokenStream, Vec<Statement>> {
+    fn block_or_stmt(i: TokenStream) -> IResult<TokenStream, Vec<Statement>> {
         alt((
             blocks::braces(many0(parse_statement)),
             parse_statement.map(|s| vec![s]),
@@ -192,6 +206,6 @@ mod tests {
             [body] => body,
             _ => panic!("Expected one statement"),
         };
-        assert_eq!(body, &Statement::new_var_decl(IDENT_INT, IDENT_B, None));
+        assert_eq!(body, &Statement::new_var_decl(IDENT_INT, IDENT_B.into(), None));
     }
 }

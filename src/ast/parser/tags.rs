@@ -20,6 +20,8 @@ def_tag!(pub(crate) close_brace => Token::CloseBrace);
 def_tag!(pub(crate) equals => Token::Equals);
 def_tag!(pub(crate) assign => Token::Assign);
 def_tag!(pub(crate) semi_colon => Token::SemiColon);
+def_tag!(pub(crate) comma => Token::Comma);
+def_tag!(pub(crate) star => Token::Star);
 
 pub(crate) fn eof(input: TokenStream) -> IResult<TokenStream, TokenStream> {
     verify(take(1usize), |t: &TokenStream| t[0] == Token::Eof)(input)

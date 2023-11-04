@@ -2,6 +2,49 @@ pub mod parsers;
 pub mod stream;
 pub mod token;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Span<'i> {
+    input: &'i str,
+    start: usize,
+    end: usize,
+}
+impl<'i> Span<'i> {
+    pub(crate) fn new(input: &'i str, start: usize, end: usize) -> Self {
+        Self { input, start, end }
+    }
+    pub(crate) fn new_remaining(input: &'i str, start: usize) -> Self {
+        Self::new(input, start, input.len())
+    }
+
+    pub fn get(&self) -> &'i str {
+        self.input.get(self.start..self.end).unwrap()
+    }
+    pub fn len(&self) -> usize {
+        self.end - self.start
+    }
+}
+impl<'i> std::fmt::Display for Span<'i> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let slice = self.input.get(self.start..self.end).unwrap();
+        use termion::color::*;
+        
+        write!(f, "Span({}{slice:?}{})", Fg(Green), Fg(Reset))
+    }
+}
+impl<'i, R> PartialEq<R> for Span<'i>
+where R: AsRef<str> {
+    fn eq(&self, other: &R) -> bool {
+        self.get() == other.as_ref()
+    }
+}
+impl<'i> std::hash::Hash for Span<'i> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.get().hash(state);
+        self.start.hash(state);
+        self.end.hash(state);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::lexer::{

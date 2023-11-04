@@ -1,3 +1,5 @@
+use super::Span;
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug, derive_more::Display)]
 pub enum Keyword {
     #[display(fmt = "typedef")]
@@ -27,7 +29,7 @@ pub enum Literal {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, derive_more::Display)]
-pub enum Token<'i> {
+pub enum TokenKind<'i> {
     Keyword(Keyword),
     Ident(Ident<'i>),
     Literal(Literal),
@@ -62,7 +64,7 @@ pub enum Token<'i> {
     #[display(fmt = "$")]
     Eof,
 }
-impl<'i> Token<'i> {
+impl<'i> TokenKind<'i> {
     #[must_use]
     pub fn as_keyword(&self) -> Option<&Keyword> {
         if let Self::Keyword(v) = self {
@@ -89,4 +91,9 @@ impl<'i> Token<'i> {
             None
         }
     }
+}
+
+pub struct Token<'i> {
+    pub(crate) kind: TokenKind<'i>,
+    pub(crate) span: Span<'i>,
 }

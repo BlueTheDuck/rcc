@@ -61,7 +61,7 @@ impl<'i, X> Span<'i, X> {
         self.end
     }
 }
-impl<'i> std::fmt::Display for Span<'i> {
+impl<'i, X> std::fmt::Display for Span<'i, X> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let slice = self.input.get(self.start..self.end).unwrap();
         use termion::color::*;
@@ -69,7 +69,7 @@ impl<'i> std::fmt::Display for Span<'i> {
         write!(f, "Span({}{slice:?}{})", Fg(Green), Fg(Reset))
     }
 }
-impl<'i, R> PartialEq<R> for Span<'i>
+impl<'i, R, X> PartialEq<R> for Span<'i, X>
 where
     R: AsRef<str>,
 {
@@ -77,13 +77,43 @@ where
         self.get() == other.as_ref()
     }
 }
-impl<'i> std::hash::Hash for Span<'i> {
+impl<'i, X> std::hash::Hash for Span<'i, X>
+where
+    X: core::hash::Hash,
+{
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.get().hash(state);
-        self.start.hash(state);
-        self.end.hash(state);
+        self.extra.hash(state);
     }
 }
+impl<'i, X> Copy for Span<'i, X> where X: Copy {}
+impl<'i, X> Clone for Span<'i, X>
+where
+    X: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            input: self.input,
+            start: self.start,
+            end: self.end,
+            extra: self.extra.clone(),
+        }
+    }
+}
+impl<'i, X: std::fmt::Debug> std::fmt::Debug for Span<'i, X>
+where
+    X: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Span")
+            .field("input", &self.input)
+            .field("start", &self.start)
+            .field("end", &self.end)
+            .field("extra", &self.extra)
+            .finish()
+    }
+}
+
 
 fn take_escape_seq<I>(iter: &mut I)
 where

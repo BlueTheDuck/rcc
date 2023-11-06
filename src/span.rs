@@ -1,16 +1,27 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Span<'i> {
+pub struct Span<'i, X = ()> {
     input: &'i str,
     start: usize,
     end: usize,
+
+    pub extra: X,
 }
-impl<'i> Span<'i> {
-    pub(crate) /* unsafe */ fn new(input: &'i str, start: usize, end: usize) -> Self {
-        Self { input, start, end }
+
+impl<'i, X> Span<'i, X>
+where
+    X: Default,
+{
+    pub(crate) fn new(input: &'i str, start: usize, end: usize) -> Self {
+        Self {
+            input,
+            start,
+            end,
+            extra: X::default(),
+        }
     }
     pub(crate) fn new_remaining(input: &'i str, start: usize) -> Self {
         Self::new(input, start, input.len())
     }
+}
 
     pub fn get(&self) -> &'i str {
         self.input.get(self.start..self.end).unwrap()

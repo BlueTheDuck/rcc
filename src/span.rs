@@ -18,6 +18,18 @@ impl<'i> Span<'i> {
     pub fn len(&self) -> usize {
         self.end - self.start
     }
+
+    #[inline]
+    #[must_use]
+    pub fn start(&self) -> usize {
+        self.start
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn end(&self) -> usize {
+        self.end
+    }
 }
 impl<'i> std::fmt::Display for Span<'i> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

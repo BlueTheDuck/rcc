@@ -5,7 +5,7 @@ pub struct Span<'i> {
     end: usize,
 }
 impl<'i> Span<'i> {
-    pub(crate) fn new(input: &'i str, start: usize, end: usize) -> Self {
+    pub(crate) /* unsafe */ fn new(input: &'i str, start: usize, end: usize) -> Self {
         Self { input, start, end }
     }
     pub(crate) fn new_remaining(input: &'i str, start: usize) -> Self {

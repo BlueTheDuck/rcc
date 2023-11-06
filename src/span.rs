@@ -23,6 +23,25 @@ where
     }
 }
 
+impl<'i, X> Span<'i, X> {
+    pub(crate) fn new_with(input: &'i str, start: usize, end: usize, extra: X) -> Self {
+        Self {
+            input,
+            start,
+            end,
+            extra,
+        }
+    }
+
+    pub(crate) fn new_remaining_with(input: &'i str, start: usize, extra: X) -> Self {
+        Self::new_with(input, start, input.len(), extra)
+    }
+
+    pub fn with(mut self, extra: X) -> Self {
+        self.extra = extra;
+        self
+    }
+
     pub fn get(&self) -> &'i str {
         self.input.get(self.start..self.end).unwrap()
     }

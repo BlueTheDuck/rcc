@@ -5,6 +5,7 @@ pub mod preprocessor;
 
 pub use preprocessor::{
     preprocess, 
+    executor::execute_preprocessor
 };
 
 pub fn is_valid_for_ident(c: char) -> bool {

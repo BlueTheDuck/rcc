@@ -96,6 +96,11 @@ impl<'i> Macro<'i> {
         body
     }
 
+    pub fn value(&self) -> Vec<Span<'i, SpanType>> {
+        debug_assert!(!self.is_function_like());
+
+        self.body.clone()
+    }
 
     pub fn name(&self) -> &'i str {
         self.name.get()

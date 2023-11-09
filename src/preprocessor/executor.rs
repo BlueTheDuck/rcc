@@ -48,8 +48,8 @@ where
                 }
             } else if let Some(r#macro) = self.defines.get(span.get()) {
                 println!("Found macro {macro}");
-                let mut arguments = Vec::with_capacity(r#macro.args());
                 if r#macro.is_function_like() {
+                    let mut arguments = Vec::with_capacity(r#macro.args());
                     let mut argument = Vec::new();
 
                     while let Some(span) = self.iter.next() {
@@ -74,15 +74,14 @@ where
                             argument.push(span);
                         }
                     }
+                    
+                    // TODO: Should this be reversed?
+                    self.r#macro = r#macro.apply(arguments);
+                } else {
+                    
+                    // TODO: Should this be reversed?
+                    self.r#macro = r#macro.value();
                 }
-
-                println!(
-                    "Applying macro {} with arguments {}",
-                    r#macro,
-                    arguments.len()
-                );
-
-                self.r#macro = r#macro.apply(arguments);
 
                 return self.next();
             } else {

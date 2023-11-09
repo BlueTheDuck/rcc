@@ -1,13 +1,11 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
-use crate::span::Span;
-
-use super::parser::SpanType;
+use crate::{preprocessor::SpanType, span::Span};
 
 struct Macro<'i> {
     name: Span<'i>,
-    args: Vec<Span<'i>>,
-    body: Vec<Span<'i>>,
+    args: HashSet<Span<'i>>,
+    body: Vec<Span<'i, SpanType>>,
 }
 impl<'i> Macro<'i> {
     fn new_from(iter: &mut impl Iterator<Item = Span<'i, SpanType>>) -> Self {
@@ -20,8 +18,8 @@ impl<'i> Macro<'i> {
 
         match iter.skip_while(|s| s.extra.is_whitespace()).next() {
             Some(span) if span == "(" => {
-                args = Vec::new();
-                body = Vec::new();
+                args = HashSet::new();
+
                 // take arguments
                 while let Some(span) = iter.skip_while(|s| s.extra.is_whitespace()).next() {
                     match span {
@@ -32,7 +30,7 @@ impl<'i> Macro<'i> {
                             continue;
                         }
                         span if span.extra.is_identifier() => {
-                            args.push(span.with(()));
+                            debug_assert!(args.insert(span.with(())), "Repeated argument names");
                         }
                         _ => {
                             todo!("unexpected token {span}");
@@ -41,7 +39,7 @@ impl<'i> Macro<'i> {
                 }
             }
             _ => {
-                args = Vec::with_capacity(0);
+                args = HashSet::with_capacity(0);
             }
         }
 
@@ -52,7 +50,7 @@ impl<'i> Macro<'i> {
                     break;
                 }
                 _ => {
-                    body.push(span.with(()));
+                    body.push(span);
                 }
             }
         }
@@ -74,7 +72,7 @@ impl<'i> Macro<'i> {
 impl<'i> core::fmt::Display for Macro<'i> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "#define {}", self.name.get())?;
-        
+
         if self.is_function_like() {
             write!(f, "(")?;
             for (i, arg) in self.args.iter().enumerate() {
@@ -94,21 +92,47 @@ impl<'i> core::fmt::Display for Macro<'i> {
     }
 }
 
-pub fn execute_preprocessor<'i>(mut iter: impl Iterator<Item = Span<'i, SpanType>>) {
-    let mut defines = HashSet::new();
-    while let Some(span) = iter.next() {
-        if span == "#" {
-            let token_type = iter.next().unwrap();
-            if token_type == "define" {
-                let mac = Macro::new_from(&mut iter);
-                println!("{mac}");
-                defines.insert(mac.name.get());
-            } else {
-                todo!("preprocessor directive {token_type} not implemented");
-            }
-        } else if defines.contains(span.get()) {
-            println!("Found {span}");
-        } else {
+pub struct PreprocessorExecutor<'i, I>
+where
+    I: Iterator<Item = Span<'i, SpanType>>,
+{
+    iter: I,
+    defines: HashMap<&'i str, Macro<'i>>,
+}
+impl<'i, I> PreprocessorExecutor<'i, I>
+where
+    I: Iterator<Item = Span<'i, SpanType>>,
+{
+    pub fn new(iter: I) -> Self {
+        Self {
+            iter,
+            defines: Default::default(),
         }
+    }
+}
+impl<'i, I> Iterator for PreprocessorExecutor<'i, I>
+where
+    I: Iterator<Item = Span<'i, SpanType>>,
+{
+    type Item = Span<'i, SpanType>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while let Some(span) = self.iter.next() {
+            if span == "#" {
+                let macro_type = self.iter.next().unwrap();
+                if macro_type == "define" {
+                    let mac = Macro::new_from(&mut self.iter);
+                    self.defines.insert(mac.name.get(), mac);
+                } else {
+                    todo!("preprocessor directive {macro_type} not implemented");
+                }
+            } else if self.defines.contains_key(span.get()) {
+                println!("Found {span}");
+            } else {
+                return Some(span);
+            }
+        }
+
+        None
     }
 }

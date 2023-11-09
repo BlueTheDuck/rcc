@@ -46,7 +46,6 @@ impl<'i, X> Span<'i, X> {
         }
     }
 
-
     pub fn get(&self) -> &'i str {
         self.input.get(self.start..self.end).unwrap()
     }
@@ -82,13 +81,15 @@ where
         self.get() == other.as_ref()
     }
 }
-impl<'i, X> std::hash::Hash for Span<'i, X>
-where
-    X: core::hash::Hash,
-{
+impl<'i, X> PartialEq for Span<'i, X> {
+    fn eq(&self, other: &Self) -> bool {
+        self.get() == other.get()
+    }
+}
+impl<'i, X> Eq for Span<'i, X> {}
+impl<'i, X> std::hash::Hash for Span<'i, X> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.get().hash(state);
-        self.extra.hash(state);
     }
 }
 impl<'i, X> Copy for Span<'i, X> where X: Copy {}
@@ -118,7 +119,6 @@ where
             .finish()
     }
 }
-
 
 #[cfg(test)]
 mod tests {

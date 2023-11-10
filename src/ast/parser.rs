@@ -24,7 +24,7 @@ pub(super) fn parse_ident<'i, 't>(
     i: TokenStream<'i, 't>,
 ) -> IResult<TokenStream<'i, 't>, Ident<'i>> {
     map_opt(take(1usize), |t: TokenStream| {
-        t.tokens[0].as_ident().copied()
+        t.tokens[0].kind.as_ident().copied()
     })(i)
 }
 

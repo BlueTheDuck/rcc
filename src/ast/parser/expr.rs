@@ -17,7 +17,7 @@ pub(crate) fn parse_literal<'i, 't>(
     i: TokenStream<'i, 't>,
 ) -> IResult<TokenStream<'i, 't>, Literal> {
     map_opt(take(1usize), |t: TokenStream| {
-        t.tokens[0].as_literal().copied()
+        t.tokens[0].kind.as_literal().copied()
     })(i)
 }
 

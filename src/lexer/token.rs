@@ -1,4 +1,4 @@
-use super::Span;
+use crate::span::Span;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, derive_more::Display)]
 pub enum Keyword {
@@ -93,7 +93,18 @@ impl<'i> TokenKind<'i> {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct Token<'i> {
     pub(crate) kind: TokenKind<'i>,
     pub(crate) span: Span<'i>,
+}
+impl<'i> Token<'i> {
+    pub fn new(kind: TokenKind<'i>, span: Span<'i>) -> Self {
+        Self { kind, span }
+    }
+}
+impl<'i> PartialEq<TokenKind<'i>> for Token<'i> {
+    fn eq(&self, other: &TokenKind<'i>) -> bool {
+        self.kind == *other
+    }
 }

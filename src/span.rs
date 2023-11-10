@@ -5,26 +5,21 @@ pub struct Span<'i, X = ()> {
 
     pub extra: X,
 }
-
 impl<'i, X> Span<'i, X>
 where
     X: Default,
 {
     pub(crate) fn new(input: &'i str, start: usize, end: usize) -> Self {
-        Self {
-            input,
-            start,
-            end,
-            extra: X::default(),
-        }
+        Self::new_with(input, start, end, Default::default())
     }
     pub(crate) fn new_remaining(input: &'i str, start: usize) -> Self {
-        Self::new(input, start, input.len())
+        Self::new_remaining_with(input, start, Default::default())
     }
 }
-
 impl<'i, X> Span<'i, X> {
     pub(crate) fn new_with(input: &'i str, start: usize, end: usize, extra: X) -> Self {
+        assert!(start <= end, "Attempted to create `Span` with start > end. {start} > {end}");
+        assert!(end <= input.len(), "Attempted to create `Span` with end > input.len(). {end} > {}", input.len());
         Self {
             input,
             start,
@@ -51,6 +46,9 @@ impl<'i, X> Span<'i, X> {
     }
     pub fn len(&self) -> usize {
         self.end - self.start
+    }
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
     #[inline]

@@ -1,9 +1,10 @@
 use crate::span::Span;
 
-use self::parser::{take_preprocessing_seq, SpanType};
-
-pub mod executor;
+mod executor;
 mod parser;
+
+pub use executor::PreprocessorExecutor;
+pub use parser::SpanType;
 
 pub fn preprocess(source: &str) -> PreprocessorTokenIter {
     PreprocessorTokenIter::new(source)
@@ -23,9 +24,9 @@ impl<'i> Iterator for PreprocessorTokenIter<'i> {
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            if let Some(span) = take_preprocessing_seq(self.source, self.start) {
+            if let Some(span) = parser::take_preprocessing_seq(self.source, self.start) {
                 self.start = span.end();
-                if span.len() > 0 {
+                if !span.is_empty() {
                     break Some(span);
                 }
             } else {

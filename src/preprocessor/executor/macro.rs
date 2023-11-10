@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{span::Span, preprocessor::parser::SpanType};
+use crate::{preprocessor::parser::SpanType, span::Span};
 
 pub struct Macro<'i> {
     name: Span<'i>,
@@ -11,8 +11,7 @@ impl<'i> Macro<'i> {
     pub(crate) fn new_from(iter: &mut impl Iterator<Item = Span<'i, SpanType>>) -> Self {
         // iter.next(); // skip whitespace
         let name = iter
-            .skip_while(|s| s.extra.is_whitespace())
-            .next()
+            .find(|s| !s.extra.is_whitespace())
             .filter(|s| s.extra.is_identifier())
             .expect("Expected identifier");
         let mut args;
@@ -20,12 +19,12 @@ impl<'i> Macro<'i> {
 
         // Does it have arguments?
 
-        match iter.skip_while(|s| s.extra.is_whitespace()).next() {
+        match iter.find(|s| !s.extra.is_whitespace()) {
             Some(span) if span == "(" => {
                 args = Vec::new();
 
                 // take arguments
-                while let Some(span) = iter.skip_while(|s| s.extra.is_whitespace()).next() {
+                while let Some(span) = iter.find(|s| !s.extra.is_whitespace()) {
                     match span {
                         span if span == ")" => {
                             break;
@@ -53,7 +52,7 @@ impl<'i> Macro<'i> {
         }
 
         // take body
-        while let Some(span) = iter.next() {
+        for span in iter.by_ref() {
             match span {
                 span if span == "\n" => {
                     break;
@@ -109,10 +108,10 @@ impl<'i> Macro<'i> {
         self.args.len()
     }
     pub fn is_function_like(&self) -> bool {
-        self.args.len() > 0
+        !self.args.is_empty()
     }
     pub fn has_body(&self) -> bool {
-        self.body.len() > 0
+        !self.body.is_empty()
     }
 }
 impl<'i> core::fmt::Display for Macro<'i> {
@@ -137,4 +136,3 @@ impl<'i> core::fmt::Display for Macro<'i> {
         Ok(())
     }
 }
-

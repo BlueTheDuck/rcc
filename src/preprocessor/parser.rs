@@ -26,8 +26,7 @@ where
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-#[derive(derive_more::IsVariant)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, derive_more::IsVariant)]
 pub enum SpanType {
     Whitespace,
 
@@ -35,7 +34,7 @@ pub enum SpanType {
 
     /// Literal values such as numbers
     /// except string
-    Literal,
+    LiteralNum,
 
     /// String literal
     String,
@@ -72,27 +71,37 @@ pub(crate) fn take_preprocessing_seq(source: &str, start: usize) -> Option<Span<
         }
         // Punctuation
         '(' | ')' | '{' | '}' | ',' | '#' | '?' | ':' | ';' => {
-            return Some(Span::new_with(source, index, index + 1, SpanType::Punctuation));
+            return Some(Span::new_with(
+                source,
+                index,
+                index + 1,
+                SpanType::Punctuation,
+            ));
         }
         '"' => {
             let end = take_string(&mut iter);
             return Some(Span::new_with(source, start, end, SpanType::String));
         }
         c if c.is_ascii_whitespace() => {
-            if let Some((next, _)) = iter.skip_while(|(_, c)| c.is_ascii_whitespace()).next() {
-                return Some(Span::new_with(source, start, next,SpanType::Whitespace));
+            if let Some((next, _)) = iter.find(|&(_, c)| !c.is_ascii_whitespace()) {
+                return Some(Span::new_with(source, start, next, SpanType::Whitespace));
             } else {
-                return Some(Span::new_remaining_with(source, start, SpanType::Whitespace));
+                return Some(Span::new_remaining_with(
+                    source,
+                    start,
+                    SpanType::Whitespace,
+                ));
             }
         }
         c if crate::is_valid_for_ident(c) => {
-            if let Some((next, _)) = iter
-                .skip_while(|(_, c)| crate::is_valid_for_ident(*c))
-                .next()
-            {
+            if let Some((next, _)) = iter.find(|&(_, c)| !crate::is_valid_for_ident(c)) {
                 return Some(Span::new_with(source, start, next, SpanType::Identifier));
             } else {
-                return Some(Span::new_remaining_with(source, start, SpanType::Identifier));
+                return Some(Span::new_remaining_with(
+                    source,
+                    start,
+                    SpanType::Identifier,
+                ));
             }
         }
         x => {

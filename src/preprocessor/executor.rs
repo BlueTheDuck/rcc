@@ -33,7 +33,7 @@ where
     type Item = Span<'i, SpanType>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while let Some(token) = self.r#macro.pop() {
+        if let Some(token) = self.r#macro.pop() {
             return Some(token);
         }
         while let Some(span) = self.iter.next() {
@@ -41,18 +41,16 @@ where
                 let macro_type = self.iter.next().unwrap();
                 if macro_type == "define" {
                     let mac = Macro::new_from(self);
-                    println!("Defining new macro {mac}");
                     self.defines.insert(mac.name(), mac);
                 } else {
                     todo!("preprocessor directive {macro_type} not implemented");
                 }
             } else if let Some(r#macro) = self.defines.get(span.get()) {
-                println!("Found macro {macro}");
                 if r#macro.is_function_like() {
                     let mut arguments = Vec::with_capacity(r#macro.args());
                     let mut argument = Vec::new();
 
-                    while let Some(span) = self.iter.next() {
+                    for span in self.iter.by_ref() {
                         if span.extra.is_whitespace() {
                             continue;
                         } else if span == "(" {
@@ -62,7 +60,7 @@ where
                         }
                     }
 
-                    while let Some(span) = self.iter.next() {
+                    for span in self.iter.by_ref() {
                         if span == ")" {
                             arguments.push(argument);
                             break;
@@ -74,11 +72,10 @@ where
                             argument.push(span);
                         }
                     }
-                    
+
                     // TODO: Should this be reversed?
                     self.r#macro = r#macro.apply(arguments);
                 } else {
-                    
                     // TODO: Should this be reversed?
                     self.r#macro = r#macro.value();
                 }

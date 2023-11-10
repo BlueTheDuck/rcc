@@ -29,6 +29,16 @@ impl<'i> Iterator for PreprocessorTokenIter<'i> {
                 if !span.is_empty() {
                     break Some(span);
                 }
+            } else if self.start == self.source.len() {
+                let span = Span::new_remaining_with(self.source, self.start, SpanType::Eof);
+                self.start = span.end() + 1;
+                break Some(span);
+            } else if self.start < self.source.len() {
+                break Some(Span::new_remaining_with(
+                    self.source,
+                    self.start,
+                    SpanType::None,
+                ));
             } else {
                 break None;
             }

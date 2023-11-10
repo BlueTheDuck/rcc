@@ -29,6 +29,8 @@ where
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, derive_more::IsVariant)]
 pub enum SpanType {
     Whitespace,
+    
+    Eof,
 
     Comment,
 

@@ -13,20 +13,26 @@ use crate::{
 
 use super::{parse_ident, tags};
 
-pub(crate) fn parse_literal(i: TokenStream) -> IResult<TokenStream, Literal> {
+pub(crate) fn parse_literal<'i, 't>(
+    i: TokenStream<'i, 't>,
+) -> IResult<TokenStream<'i, 't>, Literal> {
     map_opt(take(1usize), |t: TokenStream| {
         t.tokens[0].as_literal().copied()
     })(i)
 }
 
-pub(crate) fn parse_value(i: TokenStream) -> IResult<TokenStream, Expression> {
+pub(crate) fn parse_value<'i, 't>(
+    i: TokenStream<'i, 't>,
+) -> IResult<TokenStream<'i, 't>, Expression<'i>> {
     alt((
         map(parse_literal, Expression::Literal),
         map(parse_ident, Expression::Ident),
     ))(i)
 }
 
-pub fn parse_top_level_expression(i: TokenStream) -> IResult<TokenStream, Expression> {
+pub fn parse_top_level_expression<'i, 't>(
+    i: TokenStream<'i, 't>,
+) -> IResult<TokenStream<'i, 't>, Expression<'i>> {
     let parse_equals = separated_pair(parse_value, tags::equals, parse_value);
     alt((map(parse_equals, Expression::new_equals), parse_value))(i)
 }

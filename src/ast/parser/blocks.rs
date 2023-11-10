@@ -4,20 +4,24 @@ use crate::lexer::stream::TokenStream;
 
 use super::tags;
 
-pub(super) fn braces<'i, P, O>(
+pub(super) fn braces<'i: 't, 't, P, O>(
     parser: P,
-) -> impl FnMut(TokenStream<'i>) -> IResult<TokenStream<'i>, O, nom::error::Error<TokenStream<'i>>>
+) -> impl FnMut(
+    TokenStream<'i, 't>,
+) -> IResult<TokenStream<'i, 't>, O, nom::error::Error<TokenStream<'i, 't>>>
 where
-    P: Parser<TokenStream<'i>, O, nom::error::Error<TokenStream<'i>>>,
+    P: Parser<TokenStream<'i, 't>, O, nom::error::Error<TokenStream<'i, 't>>>,
 {
     delimited(tags::open_brace, parser, tags::close_brace)
 }
 
-pub(super) fn parens<'i, P, O>(
+pub(super) fn parens<'i: 't, 't, P, O>(
     parser: P,
-) -> impl FnMut(TokenStream<'i>) -> IResult<TokenStream<'i>, O, nom::error::Error<TokenStream<'i>>>
+) -> impl FnMut(
+    TokenStream<'i, 't>,
+) -> IResult<TokenStream<'i, 't>, O, nom::error::Error<TokenStream<'i, 't>>>
 where
-    P: Parser<TokenStream<'i>, O, nom::error::Error<TokenStream<'i>>>,
+    P: Parser<TokenStream<'i, 't>, O, nom::error::Error<TokenStream<'i, 't>>>,
 {
     delimited(tags::open_paren, parser, tags::close_paren)
 }

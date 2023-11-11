@@ -17,9 +17,26 @@ where
     }
 }
 impl<'i, X> Span<'i, X> {
-    pub(crate) fn new_with(input: &'i str, start: usize, end: usize, extra: X) -> Self {
-        assert!(start <= end, "Attempted to create `Span` with start > end. {start} > {end}");
-        assert!(end <= input.len(), "Attempted to create `Span` with end > input.len(). {end} > {}", input.len());
+    pub fn new_with(input: &'i str, start: usize, end: usize, extra: X) -> Self {
+        assert!(
+            start <= end,
+            "Attempted to create `Span` with `start` > `end`. {start} > {end}"
+        );
+        assert!(
+            end <= input.len(),
+            "Attempted to create `Span` with `end` > `input.len()`. {end} > {}",
+            input.len()
+        );
+
+        unsafe { Self::new_with_unchecked(input, start, end, extra) }
+    }
+
+    pub(crate) const unsafe fn new_with_unchecked(
+        input: &'i str,
+        start: usize,
+        end: usize,
+        extra: X,
+    ) -> Self {
         Self {
             input,
             start,

@@ -47,6 +47,12 @@ pub struct VarDecl<'i> {
     pub name: Declarator<'i>,
     pub value: Option<Expression<'i>>,
 }
+impl<'i> VarDecl<'i> {
+    pub fn new<D>(ty: Ident<'i>, name: D, value: Option<Expression<'i>>) -> Self
+    where D: Into<Declarator<'i>> {
+        Self { ty, name: name.into(), value }
+    }
+}
 impl<'i> Display for VarDecl<'i> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{ty} {name}", ty = self.ty, name = self.name)?;

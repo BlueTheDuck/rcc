@@ -28,7 +28,7 @@ pub enum Literal {
     Int(i64),
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug, derive_more::Display)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, derive_more::Display, derive_more::From)]
 pub enum TokenKind<'i> {
     Keyword(Keyword),
     Ident(Ident<'i>),
@@ -99,7 +99,7 @@ pub struct Token<'i> {
     pub(crate) span: Span<'i>,
 }
 impl<'i> Token<'i> {
-    pub fn new(kind: TokenKind<'i>, span: Span<'i>) -> Self {
+    pub const fn new(kind: TokenKind<'i>, span: Span<'i>) -> Self {
         Self { kind, span }
     }
 }

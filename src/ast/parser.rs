@@ -159,12 +159,12 @@ mod tests {
     use crate::{
         ast::{
             parser::parse_if,
-            tree::{Expression, Statement},
+            tree::{Expression, Statement, VarDecl},
         },
         lexer::{
             stream::TokenStream,
-            token::{Ident, Keyword, Token},
-        },
+            token::{Ident, Keyword, Token, TokenKind},
+        }, preprocessor::preprocess,
     };
 
     #[test]
@@ -172,21 +172,15 @@ mod tests {
         const IDENT_INT: Ident = Ident::new("int");
         const IDENT_A: Ident = Ident::new("a");
         const IDENT_B: Ident = Ident::new("b");
+        let var_decl: VarDecl = VarDecl::new(IDENT_INT, IDENT_B, None);
 
-        const TOKENS: &[Token] = &[
-            Token::Keyword(Keyword::If),
-            Token::OpenParen,
-            Token::Ident(IDENT_A),
-            Token::CloseParen,
-            Token::OpenBrace,
-            Token::Ident(IDENT_INT),
-            Token::Ident(IDENT_B),
-            Token::SemiColon,
-            Token::CloseBrace,
-        ];
+        const SOURCE: &str = "if (a) {int b;}";
+        let tokens: Vec<_> = crate::lexer::parse_tokens(preprocess(SOURCE)).collect();
+
         let (rest, r#if) =
-            parse_if(TokenStream::new(TOKENS)).expect("Could not parse token stream");
-        assert!(rest.tokens.is_empty());
+            parse_if(TokenStream::new(&tokens)).expect("Could not parse token stream");
+        assert!(rest.tokens.len() == 1, "Expected 1 token left over");
+        assert_eq!(rest.tokens[0], TokenKind::Eof, "Expected EOF, got {:?}", rest.tokens);
 
         if let Expression::Ident(id) = r#if.condition {
             assert_eq!(id, IDENT_A);
@@ -198,9 +192,10 @@ mod tests {
             [body] => body,
             _ => panic!("Expected one statement"),
         };
-        assert_eq!(
-            body,
-            &Statement::new_var_decl(IDENT_INT, IDENT_B.into(), None)
-        );
+        if let Statement::VarDecl(decl) = body {
+            assert_eq!(decl, &var_decl);
+        } else {
+            panic!("Expected var decl");
+        }
     }
 }

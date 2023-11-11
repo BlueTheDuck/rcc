@@ -1,7 +1,9 @@
-pub mod parsers;
-pub mod stream;
-pub mod token;
+pub(crate) mod parsers;
+pub(crate) mod stream;
+pub(crate) mod token;
 
+pub use parsers::parse_tokens;
+pub use stream::TokenStream;
 
 #[cfg(test)]
 mod tests {

@@ -6,7 +6,7 @@ use crate::{preprocessor::SpanType, span::Span};
 
 pub use r#macro::Macro;
 
-pub struct PreprocessorExecutor<'i, I>
+pub struct Executor<'i, I>
 where
     I: Iterator<Item = Span<'i, SpanType>>,
 {
@@ -14,7 +14,7 @@ where
     defines: HashMap<&'i str, Macro<'i>>,
     r#macro: Vec<Span<'i, SpanType>>,
 }
-impl<'i, I> PreprocessorExecutor<'i, I>
+impl<'i, I> Executor<'i, I>
 where
     I: Iterator<Item = Span<'i, SpanType>>,
 {
@@ -26,7 +26,7 @@ where
         }
     }
 }
-impl<'i, I> Iterator for PreprocessorExecutor<'i, I>
+impl<'i, I> Iterator for Executor<'i, I>
 where
     I: Iterator<Item = Span<'i, SpanType>>,
 {
